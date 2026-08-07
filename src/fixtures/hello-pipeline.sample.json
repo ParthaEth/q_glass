@@ -1,0 +1,91 @@
+{
+  "id": "q_glass.hello.v1",
+  "version": "0.1.0",
+  "label": "Hello pipeline (example)",
+  "description": "Tiny declared graph to learn q_glass: step through stages, set a stop, inspect I/O.",
+  "nodes": [
+    {
+      "id": "accept_request",
+      "label": "Accept request",
+      "kind": "activity",
+      "stageId": "accept_request",
+      "activityName": "example_accept_request",
+      "position": { "x": 220, "y": 0 },
+      "sampleInput": { "query": "Summarize the weekly report" },
+      "sampleOutput": { "job_id": "hello-1" }
+    },
+    {
+      "id": "fetch_inputs",
+      "label": "Fetch inputs",
+      "kind": "activity",
+      "stageId": "fetch_inputs",
+      "activityName": "example_fetch_inputs",
+      "position": { "x": 220, "y": 120 },
+      "sampleInput": { "job_id": "hello-1" },
+      "sampleOutput": { "items": [{ "id": "doc-1", "type": "text" }] }
+    },
+    {
+      "id": "draft_plan",
+      "label": "Draft plan",
+      "kind": "activity",
+      "stageId": "draft_plan",
+      "activityName": "example_draft_plan",
+      "position": { "x": 220, "y": 240 },
+      "sampleInput": { "query": "Summarize the weekly report", "items": [] },
+      "sampleOutput": { "plan": ["collect", "analyze", "write"] }
+    },
+    {
+      "id": "validate_plan",
+      "label": "Validate plan",
+      "kind": "activity",
+      "stageId": "validate_plan",
+      "activityName": "example_validate_plan",
+      "position": { "x": 220, "y": 360 },
+      "sampleInput": { "plan": ["collect", "analyze", "write"] },
+      "sampleOutput": { "ok": true, "issues": [] }
+    },
+    {
+      "id": "has_issues",
+      "label": "Validation issues?",
+      "kind": "decision",
+      "position": { "x": 240, "y": 480 },
+      "sampleInput": { "issues": [] },
+      "sampleOutput": { "has_issues": false }
+    },
+    {
+      "id": "repair",
+      "label": "Repair plan",
+      "kind": "activity",
+      "stageId": "repair",
+      "activityName": "example_repair",
+      "position": { "x": 480, "y": 480 },
+      "sampleInput": { "issues": ["missing_step"] },
+      "sampleOutput": { "fixed": true }
+    },
+    {
+      "id": "export_result",
+      "label": "Export result",
+      "kind": "activity",
+      "stageId": "export_result",
+      "activityName": "example_export_result",
+      "position": { "x": 220, "y": 620 },
+      "sampleInput": { "ok": true },
+      "sampleOutput": { "artifact": "result.json" }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "accept_request", "target": "fetch_inputs" },
+    { "id": "e2", "source": "fetch_inputs", "target": "draft_plan" },
+    { "id": "e3", "source": "draft_plan", "target": "validate_plan" },
+    { "id": "e4", "source": "validate_plan", "target": "has_issues" },
+    { "id": "e5", "source": "has_issues", "target": "repair", "label": "Yes" },
+    { "id": "e6", "source": "has_issues", "target": "export_result", "label": "No" },
+    {
+      "id": "e7",
+      "source": "repair",
+      "target": "validate_plan",
+      "label": "loop",
+      "cycle": true
+    }
+  ]
+}
