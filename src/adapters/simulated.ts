@@ -18,14 +18,17 @@ export class SimulatedAdapter implements RuntimeAdapter {
 		this.run = this.freshRun();
 	}
 
-	private freshRun(): RunState {
+	private freshRun(preserveStop?: string): RunState {
 		const start = entryNodeId(this.graph);
+		const stopAfter = preserveStop;
 		return {
 			runId: "sim-1",
 			graphId: this.graph.id,
 			currentNodeId: start,
-			stopAfter: undefined,
-			message: `Simulated run at "${start}". Click Step next.`,
+			stopAfter,
+			message: stopAfter
+				? `Restarted at "${start}" with stop at "${stopAfter}".`
+				: `Simulated run at "${start}". Select a node (blue highlight), Set stop, then Start.`,
 			nodeAttempts: {},
 		};
 	}
@@ -35,12 +38,54 @@ export class SimulatedAdapter implements RuntimeAdapter {
 	}
 
 	async getRunState(_runId: string): Promise<RunState | null> {
-		return { ...this.run, nodeAttempts: { ...this.run.nodeAttempts } };
+		return {
+			...this.run,
+			nodeAttempts: { ...this.run.nodeAttempts },
+		};
 	}
 
+	/**
+	 * Reset to the entry node. Keeps an existing stop breakpoint.
+	 * If a stop is set, advances automatically until that stage completes.
+	 */
 	async start(_input?: unknown): Promise<string> {
-		this.run = this.freshRun();
+		const preservedStop = this.run.stopAfter;
+		this.run = this.freshRun(preservedStop);
+
+		if (!preservedStop) {
+			return this.run.runId;
+		}
+
+		const maxSteps = this.graph.nodes.length + 8;
+		for (let i = 0; i < maxSteps; i++) {
+			const cur = this.run.currentNodeId;
+			if (!cur) break;
+
+			const pausedAtStop =
+				this.run.stopAfter === cur &&
+				(this.run.nodeAttempts[cur] ?? []).some((a) => a.status === "completed");
+			if (pausedAtStop) {
+				this.run = {
+					...this.run,
+					message: `Ran from start until stop at "${cur}". Step next to resume, or Clear stop.`,
+				};
+				break;
+			}
+
+			await this.step(_input as string);
+		}
+
 		return this.run.runId;
+	}
+
+	async clearStop(_runId: string): Promise<void> {
+		this.run = {
+			...this.run,
+			stopAfter: undefined,
+			message: this.run.currentNodeId
+				? `Stop cleared. Current: "${this.run.currentNodeId}".`
+				: "Stop cleared.",
+		};
 	}
 
 	async setStopAfter(_runId: string, stageId: string): Promise<void> {
@@ -57,19 +102,40 @@ export class SimulatedAdapter implements RuntimeAdapter {
 		this.run = {
 			...this.run,
 			stopAfter: node.id,
-			message: `Stop after "${node.id}". Step until that node completes.`,
+			message: `Stop set at "${node.id}". Click Start to run from the beginning until that stage.`,
 		};
 	}
 
 	async step(_runId: string): Promise<void> {
 		const currentId = this.run.currentNodeId;
 		if (!currentId) {
-			this.run = { ...this.run, message: "Run finished. Click Start to reset." };
+			this.run = {
+				...this.run,
+				message: "Run finished. Click Start to reset.",
+			};
 			return;
 		}
 
 		const node = this.graph.nodes.find((n) => n.id === currentId);
 		if (!node) return;
+
+		const alreadyDone = (this.run.nodeAttempts[currentId] ?? []).some(
+			(a) => a.status === "completed",
+		);
+
+		// Paused on the stop node after completing it — next Step resumes past it.
+		if (alreadyDone && this.run.stopAfter === currentId) {
+			const next = nextNodeId(this.graph, currentId);
+			this.run = {
+				...this.run,
+				stopAfter: undefined,
+				currentNodeId: next ?? undefined,
+				message: next
+					? `Resumed past stop → now at "${next}"`
+					: `Resumed past stop. Pipeline finished.`,
+			};
+			return;
+		}
 
 		const attempt: NodeAttempt = {
 			attempt: (this.run.nodeAttempts[currentId]?.length ?? 0) + 1,
@@ -84,22 +150,25 @@ export class SimulatedAdapter implements RuntimeAdapter {
 		};
 
 		const hitStop = this.run.stopAfter === currentId;
-		const next = hitStop ? null : nextNodeId(this.graph, currentId);
+		if (hitStop) {
+			this.run = {
+				...this.run,
+				nodeAttempts,
+				currentNodeId: currentId,
+				message: `Stopped after "${currentId}". Step next again to resume, or Clear stop.`,
+			};
+			return;
+		}
 
+		const next = nextNodeId(this.graph, currentId);
 		this.run = {
 			...this.run,
 			nodeAttempts,
 			currentNodeId: next ?? undefined,
-			message: hitStop
-				? `Stopped after "${currentId}". Clear stop or Start to continue.`
-				: next
-					? `Completed "${currentId}" → now at "${next}"`
-					: `Completed "${currentId}". Pipeline finished.`,
+			message: next
+				? `Completed "${currentId}" → now at "${next}"`
+				: `Completed "${currentId}". Pipeline finished.`,
 		};
-
-		if (hitStop) {
-			this.run = { ...this.run, stopAfter: undefined };
-		}
 	}
 }
 

@@ -15,11 +15,13 @@ export default function App() {
 	const [hint, setHint] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
-	const refreshRun = useCallback(async () => {
+	const refreshRun = useCallback(async (opts?: { followCurrent?: boolean }) => {
 		const state = await adapter.getRunState("sim-1");
 		setRun(state);
 		if (state?.message) setHint(state.message);
-		if (state?.currentNodeId) setSelectedNodeId(state.currentNodeId);
+		if (opts?.followCurrent && state?.currentNodeId) {
+			setSelectedNodeId(state.currentNodeId);
+		}
 	}, []);
 
 	useEffect(() => {
@@ -27,7 +29,7 @@ export default function App() {
 			try {
 				const g = await adapter.loadGraph();
 				setGraph(g);
-				await refreshRun();
+				await refreshRun({ followCurrent: true });
 			} catch (err: unknown) {
 				setError(err instanceof Error ? err.message : String(err));
 			}
@@ -49,19 +51,25 @@ export default function App() {
 	}, [run]);
 
 	const onStart = useCallback(() => {
-		void adapter.start().then(() => refreshRun());
+		void adapter.start().then(() => refreshRun({ followCurrent: true }));
 	}, [refreshRun]);
 
 	const onSetStop = useCallback(() => {
 		if (!selectedNodeId) {
-			setHint("Select a node first, then click Set stop.");
+			setHint("Select a node on the graph first, then click Set stop.");
 			return;
 		}
-		void adapter.setStopAfter("sim-1", selectedNodeId).then(() => refreshRun());
+		void adapter.setStopAfter("sim-1", selectedNodeId).then(() => {
+			void refreshRun();
+		});
 	}, [selectedNodeId, refreshRun]);
 
+	const onClearStop = useCallback(() => {
+		void adapter.clearStop("sim-1").then(() => refreshRun());
+	}, [refreshRun]);
+
 	const onStep = useCallback(() => {
-		void adapter.step("sim-1").then(() => refreshRun());
+		void adapter.step("sim-1").then(() => refreshRun({ followCurrent: true }));
 	}, [refreshRun]);
 
 	if (error) {
@@ -86,9 +94,11 @@ export default function App() {
 				graphLabel={graph.label}
 				adapterName={adapter.name}
 				supportsControl={adapter.supportsControl}
+				stopAfter={run?.stopAfter ?? null}
 				hint={hint}
 				onStart={onStart}
 				onSetStop={onSetStop}
+				onClearStop={onClearStop}
 				onStep={onStep}
 			/>
 			<main className="qg-main">
@@ -96,6 +106,7 @@ export default function App() {
 					graph={graph}
 					selectedNodeId={selectedNodeId}
 					currentNodeId={run?.currentNodeId ?? null}
+					stopAfterNodeId={run?.stopAfter ?? null}
 					completedNodeIds={completedIds}
 					onSelectNode={setSelectedNodeId}
 				/>

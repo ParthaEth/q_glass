@@ -22,6 +22,7 @@ type Props = {
 	graph: GraphDefinition;
 	selectedNodeId: string | null;
 	currentNodeId: string | null;
+	stopAfterNodeId: string | null;
 	completedNodeIds: Set<string>;
 	onSelectNode: (nodeId: string | null) => void;
 };
@@ -30,6 +31,7 @@ export default function GraphCanvas({
 	graph,
 	selectedNodeId,
 	currentNodeId,
+	stopAfterNodeId,
 	completedNodeIds,
 	onSelectNode,
 }: Props) {
@@ -48,11 +50,18 @@ export default function GraphCanvas({
 						kind: n.kind,
 						stageId: n.stageId,
 						runStatus,
+						isStop: n.id === stopAfterNodeId,
 					},
 					selected: n.id === selectedNodeId,
 				};
 			}),
-		[graph.nodes, selectedNodeId, currentNodeId, completedNodeIds],
+		[
+			graph.nodes,
+			selectedNodeId,
+			currentNodeId,
+			stopAfterNodeId,
+			completedNodeIds,
+		],
 	);
 
 	const edges: Edge[] = useMemo(
