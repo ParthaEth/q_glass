@@ -1,0 +1,2 @@
+[console_scripts]
+q-glass = q_glass.cli:main

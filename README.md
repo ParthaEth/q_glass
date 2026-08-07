@@ -2,31 +2,43 @@
 
 Glass-box **control panel** for declared durable-workflow stage graphs.
 
-Hosts register a static `GraphDefinition` (activity boxes, decision diamonds,
-loops). q_glass displays the graph, shows per-stage I/O (JSON by default), and
-can drive stop / step via a runtime adapter — or replay offline dumps — without
-replacing the orchestration engine.
+**Public API is Python**: build graphs with `GraphBuilder`, run them with
+`run_node` / `run_from`, and optionally `serve` a local HTTP bridge for the
+React dashboard. Graph JSON is an internal detail for the UI — hosts never
+author it by hand.
 
 Production stays **headless**. This UI is optional for design and debugging.
 
-## Quick demo
+## Quickstart (Python + UI)
 
 ```bash
 make demo
 ```
 
-Installs deps if needed and opens **http://127.0.0.1:5173** with the
-[hello pipeline](src/fixtures/hello-pipeline.sample.json) example. Use
-**Set start** → edit input → **Start** (and optional **Set stop** / **Step next**).
+Installs the editable Python package (if needed), starts the hello API on
+**http://127.0.0.1:8787**, and Vite on **http://127.0.0.1:5173**. Open:
 
-Or:
+`http://127.0.0.1:5173/?adapter=http&api=http://127.0.0.1:8787`
+
+Handlers are real Python callables — edit the start `query`, click **Start**,
+and inspect transformed outputs.
+
+CLI-only:
 
 ```bash
-npm install
-npm run dev:open
+cd python && pip install -e ".[dev]"
+python -m q_glass.examples.hello run --query "Summarize the weekly report"
+python -m q_glass.examples.hello serve   # then open the UI URL above
 ```
 
-More detail: [examples/README.md](examples/README.md).
+UI-only simulated mode (no Python):
+
+```bash
+make demo-ui
+```
+
+More detail: [docs/07-python-api.md](docs/07-python-api.md),
+[examples/README.md](examples/README.md).
 
 ## Docs
 
@@ -40,6 +52,7 @@ More detail: [examples/README.md](examples/README.md).
 | [04 — Visualizers](docs/04-visualizers.md) | Default JSON + plugin API |
 | [05 — Trace dumps](docs/05-trace-dumps.md) | Offline bundle format |
 | [06 — Roadmap](docs/06-roadmap.md) | Phased delivery |
+| [07 — Python API](docs/07-python-api.md) | GraphBuilder, runtime, serve |
 
 ## License
 

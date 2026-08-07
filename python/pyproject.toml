@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "q_glass"
+version = "0.2.0"
+description = "Glass-box control panel and Python API for declared stage graphs"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "ParthaEth" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+q-glass = "q_glass.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["q_glass*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { HttpAdapter, shouldUseHttpAdapter } from "./adapters/http";
 import { SimulatedAdapter } from "./adapters/simulated";
+import type { RuntimeAdapter } from "./adapters/types";
 import GraphCanvas from "./components/GraphCanvas";
 import NodeInspector from "./components/NodeInspector";
 import Toolbar from "./components/Toolbar";
 import type { GraphDefinition, RunState } from "./types/graph";
 
-const adapter = new SimulatedAdapter();
+function createAdapter(): RuntimeAdapter {
+	return shouldUseHttpAdapter() ? new HttpAdapter() : new SimulatedAdapter();
+}
+
+const adapter = createAdapter();
 
 export default function App() {
 	const [graph, setGraph] = useState<GraphDefinition | null>(null);
@@ -15,14 +21,16 @@ export default function App() {
 	const [hint, setHint] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
+	const runId = run?.runId ?? "session-1";
+
 	const refreshRun = useCallback(async (opts?: { followCurrent?: boolean }) => {
-		const state = await adapter.getRunState("sim-1");
+		const state = await adapter.getRunState(runId);
 		setRun(state);
 		if (state?.message) setHint(state.message);
 		if (opts?.followCurrent && state?.currentNodeId) {
 			setSelectedNodeId(state.currentNodeId);
 		}
-	}, []);
+	}, [runId]);
 
 	useEffect(() => {
 		void (async () => {
@@ -59,21 +67,21 @@ export default function App() {
 			setHint("Select a node on the graph first, then click Set start.");
 			return;
 		}
-		void adapter.setStart("sim-1", selectedNodeId).then(() => {
+		void adapter.setStart?.(runId, selectedNodeId).then(() => {
 			setSelectedNodeId(selectedNodeId);
 			void refreshRun();
 		});
-	}, [selectedNodeId, refreshRun]);
+	}, [selectedNodeId, refreshRun, runId]);
 
 	const onClearStart = useCallback(() => {
-		void adapter.clearStart("sim-1").then(() => refreshRun());
-	}, [refreshRun]);
+		void adapter.clearStart?.(runId).then(() => refreshRun());
+	}, [refreshRun, runId]);
 
 	const onStartInputChange = useCallback(
 		(value: unknown) => {
-			void adapter.setStartInput("sim-1", value).then(() => refreshRun());
+			void adapter.setStartInput?.(runId, value).then(() => refreshRun());
 		},
-		[refreshRun],
+		[refreshRun, runId],
 	);
 
 	const onSetStop = useCallback(() => {
@@ -81,23 +89,30 @@ export default function App() {
 			setHint("Select a node on the graph first, then click Set stop.");
 			return;
 		}
-		void adapter.setStopAfter("sim-1", selectedNodeId).then(() => {
+		void adapter.setStopAfter(runId, selectedNodeId).then(() => {
 			void refreshRun();
 		});
-	}, [selectedNodeId, refreshRun]);
+	}, [selectedNodeId, refreshRun, runId]);
 
 	const onClearStop = useCallback(() => {
-		void adapter.clearStop("sim-1").then(() => refreshRun());
-	}, [refreshRun]);
+		void adapter.clearStop?.(runId).then(() => refreshRun());
+	}, [refreshRun, runId]);
 
 	const onStep = useCallback(() => {
-		void adapter.step("sim-1").then(() => refreshRun({ followCurrent: true }));
-	}, [refreshRun]);
+		void adapter.step(runId).then(() => refreshRun({ followCurrent: true }));
+	}, [refreshRun, runId]);
 
 	if (error) {
 		return (
 			<div className="qg-app qg-app--error">
 				<p>Failed to load graph: {error}</p>
+				{adapter.name === "http" ? (
+					<p>
+						Is the Python API running? Try{" "}
+						<code>python -m q_glass.examples.hello serve</code> then open with{" "}
+						<code>?adapter=http&amp;api=http://127.0.0.1:8787</code>.
+					</p>
+				) : null}
 			</div>
 		);
 	}
