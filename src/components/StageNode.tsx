@@ -14,10 +14,12 @@ export type StageNodeData = {
 	stageId?: string;
 	runStatus?: "pending" | "running" | "completed";
 	isStop?: boolean;
+	isStart?: boolean;
 };
 
 function statusBits(data: StageNodeData, selected: boolean) {
 	if (selected) return <div className="qg-node__status">selected</div>;
+	if (data.isStart) return <div className="qg-node__status">start</div>;
 	if (data.isStop) return <div className="qg-node__status">stop</div>;
 	if (data.runStatus && data.runStatus !== "pending") {
 		return <div className="qg-node__status">{data.runStatus}</div>;
@@ -31,6 +33,7 @@ function StageNode({ data, selected }: NodeProps<Node<StageNodeData>>) {
 		selected ? "qg-node--selected" : "",
 		data.runStatus === "running" ? "qg-node--running" : "",
 		data.runStatus === "completed" ? "qg-node--completed" : "",
+		data.isStart ? "qg-node--start" : "",
 		data.isStop ? "qg-node--stop" : "",
 	]
 		.filter(Boolean)

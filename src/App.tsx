@@ -54,6 +54,28 @@ export default function App() {
 		void adapter.start().then(() => refreshRun({ followCurrent: true }));
 	}, [refreshRun]);
 
+	const onSetStart = useCallback(() => {
+		if (!selectedNodeId) {
+			setHint("Select a node on the graph first, then click Set start.");
+			return;
+		}
+		void adapter.setStart("sim-1", selectedNodeId).then(() => {
+			setSelectedNodeId(selectedNodeId);
+			void refreshRun();
+		});
+	}, [selectedNodeId, refreshRun]);
+
+	const onClearStart = useCallback(() => {
+		void adapter.clearStart("sim-1").then(() => refreshRun());
+	}, [refreshRun]);
+
+	const onStartInputChange = useCallback(
+		(value: unknown) => {
+			void adapter.setStartInput("sim-1", value).then(() => refreshRun());
+		},
+		[refreshRun],
+	);
+
 	const onSetStop = useCallback(() => {
 		if (!selectedNodeId) {
 			setHint("Select a node on the graph first, then click Set stop.");
@@ -94,9 +116,12 @@ export default function App() {
 				graphLabel={graph.label}
 				adapterName={adapter.name}
 				supportsControl={adapter.supportsControl}
+				startNodeId={run?.startNodeId ?? null}
 				stopAfter={run?.stopAfter ?? null}
 				hint={hint}
 				onStart={onStart}
+				onSetStart={onSetStart}
+				onClearStart={onClearStart}
 				onSetStop={onSetStop}
 				onClearStop={onClearStop}
 				onStep={onStep}
@@ -106,6 +131,7 @@ export default function App() {
 					graph={graph}
 					selectedNodeId={selectedNodeId}
 					currentNodeId={run?.currentNodeId ?? null}
+					startNodeId={run?.startNodeId ?? null}
 					stopAfterNodeId={run?.stopAfter ?? null}
 					completedNodeIds={completedIds}
 					onSelectNode={setSelectedNodeId}
@@ -114,6 +140,7 @@ export default function App() {
 					node={selectedNode}
 					run={run}
 					selectedNodeId={selectedNodeId}
+					onStartInputChange={onStartInputChange}
 				/>
 			</main>
 		</div>

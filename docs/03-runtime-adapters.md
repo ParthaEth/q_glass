@@ -6,9 +6,13 @@ Adapters implement [`../src/adapters/types.ts`](../src/adapters/types.ts).
 RuntimeAdapter
   loadGraph()
   getRunState(runId)
-  setStopAfter(runId, stageId)   # control
-  step(runId)                    # control
-  start(input?)                  # control
+  setStart(runId, stageId)       # where Start begins
+  clearStart(runId)
+  setStartInput(runId, value)    # JSON input for the start node
+  setStopAfter(runId, stageId)   # breakpoint
+  clearStop(runId)
+  step(runId)
+  start(input?)                  # run from start → stop or end
 ```
 
 | Adapter | Mode | Control | Status |
@@ -18,6 +22,16 @@ RuntimeAdapter
 | Live orchestrator adapter | Cluster | Yes | Planned |
 | `TraceDumpAdapter` | Offline JSON bundle | No (browse/replay UI) | Planned |
 
+## Start point + editable input (demo)
+
+`SimulatedAdapter` keeps `startNodeId` and `startInput` on `RunState`:
+
+1. **Set start** on a node (defaults to the graph entry).
+2. Edit that node’s input in the inspector (JSON); **Apply** / blur calls `setStartInput`.
+3. **Start** resets attempts, sets `currentNodeId` to the start node, uses `startInput` for that node’s first attempt, then auto-advances until **stop** or the end of the happy path.
+
+Downstream nodes still use fixture `sampleInput` / `sampleOutput` in the demo. Live adapters should map start input to the host’s real workflow/job payload.
+
 ## Live adapter (planned)
 
 Maps UI actions onto host patterns (illustrative):
@@ -25,6 +39,8 @@ Maps UI actions onto host patterns (illustrative):
 | UI action | Typical host mechanism |
 |-----------|------------------------|
 | Open run | Workflow / job id + status query |
+| Set start | First stage / continue-as-new entry |
+| Set start input | Workflow start args / memo |
 | Set stop | Breakpoint / `stop_after` signal or start input |
 | Step next | Signal to advance to next catalog stage |
 | Highlight node | Current / completed stage fields from overview |

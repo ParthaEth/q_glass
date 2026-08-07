@@ -17,7 +17,7 @@ make demo
 
 Installs deps if needed and opens **http://127.0.0.1:5173** with the
 [hello pipeline](src/fixtures/hello-pipeline.sample.json) example. Use
-**Start / Set stop / Step next** — simulated in-browser run (no cluster required).
+**Set start** → edit input → **Start** (and optional **Set stop** / **Step next**).
 
 Or:
 

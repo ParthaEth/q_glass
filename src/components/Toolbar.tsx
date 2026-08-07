@@ -2,9 +2,12 @@ type Props = {
 	graphLabel: string;
 	adapterName: string;
 	supportsControl: boolean;
+	startNodeId: string | null;
 	stopAfter: string | null;
 	hint: string | null;
 	onStart: () => void;
+	onSetStart: () => void;
+	onClearStart: () => void;
 	onSetStop: () => void;
 	onClearStop: () => void;
 	onStep: () => void;
@@ -14,9 +17,12 @@ export default function Toolbar({
 	graphLabel,
 	adapterName,
 	supportsControl,
+	startNodeId,
 	stopAfter,
 	hint,
 	onStart,
+	onSetStart,
+	onClearStart,
 	onSetStop,
 	onClearStop,
 	onStep,
@@ -29,6 +35,11 @@ export default function Toolbar({
 			</div>
 			<div className="qg-toolbar__actions">
 				<span className="qg-chip">adapter: {adapterName}</span>
+				{startNodeId ? (
+					<span className="qg-chip qg-chip--start" title="Run starts here">
+						start: {startNodeId}
+					</span>
+				) : null}
 				{stopAfter ? (
 					<span className="qg-chip qg-chip--stop" title="Breakpoint">
 						stop: {stopAfter}
@@ -36,6 +47,12 @@ export default function Toolbar({
 				) : null}
 				<button type="button" disabled={!supportsControl} onClick={onStart}>
 					Start
+				</button>
+				<button type="button" disabled={!supportsControl} onClick={onSetStart}>
+					Set start
+				</button>
+				<button type="button" disabled={!supportsControl} onClick={onClearStart}>
+					Clear start
 				</button>
 				<button type="button" disabled={!supportsControl} onClick={onSetStop}>
 					Set stop

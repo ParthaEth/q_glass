@@ -16,6 +16,7 @@ export class NoopAdapter implements RuntimeAdapter {
 			runId: "demo",
 			graphId: (sampleGraph as GraphDefinition).id,
 			currentNodeId: "accept_request",
+			startNodeId: "accept_request",
 			message: "Demo run — control not enabled on NoopAdapter",
 			nodeAttempts: {},
 		};
@@ -23,6 +24,22 @@ export class NoopAdapter implements RuntimeAdapter {
 
 	async setStopAfter(_runId: string, _stageId: string): Promise<void> {
 		throw new AdapterNotWiredError("setStopAfter");
+	}
+
+	async clearStop(_runId: string): Promise<void> {
+		throw new AdapterNotWiredError("clearStop");
+	}
+
+	async setStart(_runId: string, _stageId: string): Promise<void> {
+		throw new AdapterNotWiredError("setStart");
+	}
+
+	async clearStart(_runId: string): Promise<void> {
+		throw new AdapterNotWiredError("clearStart");
+	}
+
+	async setStartInput(_runId: string, _value: unknown): Promise<void> {
+		throw new AdapterNotWiredError("setStartInput");
 	}
 
 	async step(_runId: string): Promise<void> {

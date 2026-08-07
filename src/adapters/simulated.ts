@@ -3,7 +3,7 @@ import type { RuntimeAdapter } from "./types";
 import helloGraph from "../fixtures/hello-pipeline.sample.json";
 
 /**
- * In-browser example runner: walks a declared graph, supports stop/step.
+ * In-browser example runner: walks a declared graph, supports start/stop/step.
  * Not a real orchestrator — for visualizing q_glass without a cluster.
  */
 export class SimulatedAdapter implements RuntimeAdapter {
@@ -12,23 +12,44 @@ export class SimulatedAdapter implements RuntimeAdapter {
 
 	private readonly graph: GraphDefinition;
 	private run: RunState;
+	private readonly entryId: string;
 
 	constructor() {
 		this.graph = helloGraph as GraphDefinition;
+		this.entryId = entryNodeId(this.graph);
 		this.run = this.freshRun();
 	}
 
-	private freshRun(preserveStop?: string): RunState {
-		const start = entryNodeId(this.graph);
-		const stopAfter = preserveStop;
+	private resolveStartId(explicit?: string): string {
+		return explicit ?? this.run.startNodeId ?? this.entryId;
+	}
+
+	private defaultStartInput(startId: string): unknown {
+		const node = this.graph.nodes.find((n) => n.id === startId);
+		return node?.sampleInput ?? null;
+	}
+
+	private freshRun(opts?: {
+		preserveStop?: string;
+		preserveStart?: string;
+		preserveStartInput?: unknown;
+	}): RunState {
+		const startId = opts?.preserveStart ?? this.entryId;
+		const startInput =
+			opts?.preserveStartInput !== undefined
+				? opts.preserveStartInput
+				: this.defaultStartInput(startId);
+		const stopAfter = opts?.preserveStop;
 		return {
 			runId: "sim-1",
 			graphId: this.graph.id,
-			currentNodeId: start,
+			currentNodeId: startId,
+			startNodeId: startId,
+			startInput,
 			stopAfter,
 			message: stopAfter
-				? `Restarted at "${start}" with stop at "${stopAfter}".`
-				: `Simulated run at "${start}". Select a node (blue highlight), Set stop, then Start.`,
+				? `Ready at "${startId}" with stop at "${stopAfter}". Click Start to run.`
+				: `Ready at start "${startId}". Edit input in the panel, then Start.`,
 			nodeAttempts: {},
 		};
 	}
@@ -44,22 +65,73 @@ export class SimulatedAdapter implements RuntimeAdapter {
 		};
 	}
 
+	async setStart(_runId: string, stageId: string): Promise<void> {
+		const node =
+			this.graph.nodes.find((n) => n.id === stageId || n.stageId === stageId) ??
+			null;
+		if (!node) {
+			this.run = {
+				...this.run,
+				message: `Unknown start stage "${stageId}"`,
+			};
+			return;
+		}
+		const same = this.run.startNodeId === node.id;
+		this.run = {
+			...this.run,
+			startNodeId: node.id,
+			startInput: same
+				? (this.run.startInput ?? this.defaultStartInput(node.id))
+				: this.defaultStartInput(node.id),
+			message: `Start set at "${node.id}". Edit its input, then click Start to run from there.`,
+		};
+	}
+
+	async clearStart(_runId: string): Promise<void> {
+		this.run = {
+			...this.run,
+			startNodeId: this.entryId,
+			startInput: this.defaultStartInput(this.entryId),
+			message: `Start cleared → entry "${this.entryId}".`,
+		};
+	}
+
+	async setStartInput(_runId: string, value: unknown): Promise<void> {
+		this.run = {
+			...this.run,
+			startInput: value,
+			message: `Start input updated for "${this.run.startNodeId ?? this.entryId}". Click Start to run.`,
+		};
+	}
+
 	/**
-	 * Reset to the entry node. Keeps an existing stop breakpoint.
-	 * If a stop is set, advances automatically until that stage completes.
+	 * Reset to the start node (not always graph entry). Keeps stop + start + startInput.
+	 * Auto-advances until stop or end.
 	 */
 	async start(_input?: unknown): Promise<string> {
 		const preservedStop = this.run.stopAfter;
-		this.run = this.freshRun(preservedStop);
+		const preservedStart = this.resolveStartId();
+		const preservedInput =
+			_input !== undefined
+				? _input
+				: (this.run.startInput ?? this.defaultStartInput(preservedStart));
 
-		if (!preservedStop) {
-			return this.run.runId;
-		}
+		this.run = this.freshRun({
+			preserveStop: preservedStop,
+			preserveStart: preservedStart,
+			preserveStartInput: preservedInput,
+		});
 
 		const maxSteps = this.graph.nodes.length + 8;
 		for (let i = 0; i < maxSteps; i++) {
 			const cur = this.run.currentNodeId;
-			if (!cur) break;
+			if (!cur) {
+				this.run = {
+					...this.run,
+					message: `Finished from start "${preservedStart}".`,
+				};
+				break;
+			}
 
 			const pausedAtStop =
 				this.run.stopAfter === cur &&
@@ -67,12 +139,12 @@ export class SimulatedAdapter implements RuntimeAdapter {
 			if (pausedAtStop) {
 				this.run = {
 					...this.run,
-					message: `Ran from start until stop at "${cur}". Step next to resume, or Clear stop.`,
+					message: `Ran from "${preservedStart}" until stop at "${cur}".`,
 				};
 				break;
 			}
 
-			await this.step(_input as string);
+			await this.step("sim-1");
 		}
 
 		return this.run.runId;
@@ -102,7 +174,7 @@ export class SimulatedAdapter implements RuntimeAdapter {
 		this.run = {
 			...this.run,
 			stopAfter: node.id,
-			message: `Stop set at "${node.id}". Click Start to run from the beginning until that stage.`,
+			message: `Stop set at "${node.id}". Click Start to run from start until that stage.`,
 		};
 	}
 
@@ -123,7 +195,6 @@ export class SimulatedAdapter implements RuntimeAdapter {
 			(a) => a.status === "completed",
 		);
 
-		// Paused on the stop node after completing it — next Step resumes past it.
 		if (alreadyDone && this.run.stopAfter === currentId) {
 			const next = nextNodeId(this.graph, currentId);
 			this.run = {
@@ -137,10 +208,16 @@ export class SimulatedAdapter implements RuntimeAdapter {
 			return;
 		}
 
+		const startId = this.run.startNodeId ?? this.entryId;
+		const input =
+			currentId === startId
+				? (this.run.startInput ?? node.sampleInput ?? null)
+				: (node.sampleInput ?? null);
+
 		const attempt: NodeAttempt = {
 			attempt: (this.run.nodeAttempts[currentId]?.length ?? 0) + 1,
 			status: "completed",
-			input: node.sampleInput ?? null,
+			input,
 			output: node.sampleOutput ?? null,
 		};
 
@@ -172,7 +249,6 @@ export class SimulatedAdapter implements RuntimeAdapter {
 	}
 }
 
-/** Prefer the happy path at decisions (edge label "No"); skip cycle edges. */
 function nextNodeId(graph: GraphDefinition, fromId: string): string | null {
 	const outs = graph.edges.filter((e) => e.source === fromId && !e.cycle);
 	if (outs.length === 0) return null;

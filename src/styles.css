@@ -263,9 +263,60 @@ body,
 	background: #eef3fa;
 }
 
+.qg-chip--start {
+	background: #e8f0ff;
+	color: #2a4b7c;
+}
+
 .qg-chip--stop {
 	background: #fff0e8;
 	color: var(--decision);
+}
+
+.qg-node--start {
+	border-color: #2a4b7c;
+	box-shadow: 0 0 0 2px rgb(42 75 124 / 22%);
+}
+
+.qg-diamond-wrap.qg-node--start .qg-diamond__face {
+	border-color: #2a4b7c;
+	box-shadow: 0 0 0 2px rgb(42 75 124 / 22%);
+	background: #eef3fa;
+}
+
+.qg-json-edit {
+	width: 100%;
+	margin: 0;
+	padding: 0.75rem;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: #1c1a17;
+	color: #f4f1ec;
+	font-size: 0.75rem;
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	resize: vertical;
+	line-height: 1.35;
+}
+
+.qg-inspector__row {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-top: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.qg-inspector__row button {
+	border: 1px solid var(--line);
+	background: white;
+	padding: 0.3rem 0.7rem;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+.qg-error {
+	color: #b42318;
+	font-size: 0.8rem;
 }
 
 .qg-node--running {

@@ -23,6 +23,7 @@ type Props = {
 	graph: GraphDefinition;
 	selectedNodeId: string | null;
 	currentNodeId: string | null;
+	startNodeId: string | null;
 	stopAfterNodeId: string | null;
 	completedNodeIds: Set<string>;
 	onSelectNode: (nodeId: string | null) => void;
@@ -32,6 +33,7 @@ export default function GraphCanvas({
 	graph,
 	selectedNodeId,
 	currentNodeId,
+	startNodeId,
 	stopAfterNodeId,
 	completedNodeIds,
 	onSelectNode,
@@ -52,6 +54,7 @@ export default function GraphCanvas({
 						visualType: resolveVisualType(n),
 						stageId: n.stageId,
 						runStatus,
+						isStart: n.id === startNodeId,
 						isStop: n.id === stopAfterNodeId,
 					},
 					selected: n.id === selectedNodeId,
@@ -61,6 +64,7 @@ export default function GraphCanvas({
 			graph.nodes,
 			selectedNodeId,
 			currentNodeId,
+			startNodeId,
 			stopAfterNodeId,
 			completedNodeIds,
 		],

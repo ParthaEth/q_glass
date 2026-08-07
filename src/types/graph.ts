@@ -66,6 +66,10 @@ export interface RunState {
 	runId: string;
 	graphId: string;
 	currentNodeId?: string;
+	/** Node where the next Start begins (defaults to graph entry). */
+	startNodeId?: string;
+	/** Input JSON applied when the start node runs. */
+	startInput?: unknown;
 	stopAfter?: string;
 	nodeAttempts: Record<string, NodeAttempt[]>;
 	message?: string;
