@@ -70,8 +70,14 @@ result = run_from(
 ## Serve (dashboard)
 
 ```python
-serve(graph, host="127.0.0.1", port=8787)
+serve(graph, host="127.0.0.1", port=8787)           # starts Vite UI too
+serve(graph, host="127.0.0.1", port=8787, headless=True)  # API only
 ```
+
+By default (non-headless, blocking), `serve` also runs `npm run dev` in the
+q_glass frontend root (Vite console is silenced). It prints — and opens — the
+`?adapter=http&api=…` URL. Bare `http://127.0.0.1:5173/` is simulated-only.
+Pass `headless=True` / `--headless` for API-only, or `--no-open` to skip the browser.
 
 Stdlib HTTP control plane (CORS enabled for Vite):
 
@@ -95,13 +101,14 @@ Open the UI with:
 ## CLI
 
 ```bash
-python -m q_glass hello serve --port 8787
-python -m q_glass hello run --query "…"
+python -m q_glass.examples.hello serve              # API + Vite
+python -m q_glass.examples.hello serve --headless   # API only
 python -m q_glass.examples.hello run --query "…"
+python -m q_glass hello serve --port 8787
 ```
 
-From the repo root, `make demo` starts the API and Vite together. `make demo-ui`
-keeps the in-browser simulated fixture (no Python).
+From the repo root, `make demo` is the same as `python -m q_glass.examples.hello serve`
+(after install). `make demo-ui` is simulated UI-only (no Python).
 
 ## Hello example
 

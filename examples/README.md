@@ -14,14 +14,16 @@ make demo
 
 Open **http://127.0.0.1:5173/?adapter=http&api=http://127.0.0.1:8787**.
 
-Or separately:
+Or:
 
 ```bash
 cd python && pip install -e ".[dev]"
+# once: npm install in the q_glass repo root
 python -m q_glass.examples.hello serve
-# in another terminal, from repo root:
-npm run dev
+# API-only: python -m q_glass.examples.hello serve --headless
 ```
+
+`serve` starts the Vite UI automatically unless `--headless`.
 
 CLI once:
 

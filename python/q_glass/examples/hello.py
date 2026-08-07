@@ -138,6 +138,18 @@ def main(argv: list[str] | None = None) -> None:
 		help="Start input query for run mode",
 	)
 	parser.add_argument("--stop-after", default=None)
+	parser.add_argument(
+		"--headless",
+		action="store_true",
+		help="API only — do not start the Vite UI (default starts npm run dev)",
+	)
+	parser.add_argument("--ui-host", default="127.0.0.1")
+	parser.add_argument("--ui-port", type=int, default=5173)
+	parser.add_argument(
+		"--no-open",
+		action="store_true",
+		help="Do not open a browser tab automatically",
+	)
 	args = parser.parse_args(argv)
 
 	graph = build_hello_graph()
@@ -155,7 +167,16 @@ def main(argv: list[str] | None = None) -> None:
 		}, indent=2))
 		return
 
-	serve(graph, host=args.host, port=args.port, blocking=True)
+	serve(
+		graph,
+		host=args.host,
+		port=args.port,
+		blocking=True,
+		headless=args.headless,
+		ui_host=args.ui_host,
+		ui_port=args.ui_port,
+		open_browser=not args.no_open,
+	)
 
 
 if __name__ == "__main__":

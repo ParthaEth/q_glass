@@ -93,3 +93,13 @@ class TestBuilder:
 
 		with pytest.raises(ValueError, match="at least one node"):
 			GraphBuilder("empty").build()
+
+
+class TestServeUiRoot:
+	def test_find_ui_root(self) -> None:
+		from q_glass.serve import find_ui_root
+
+		root = find_ui_root()
+		assert root is not None
+		assert (root / "package.json").is_file()
+		assert (root / "src" / "App.tsx").is_file()

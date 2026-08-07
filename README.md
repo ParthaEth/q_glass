@@ -15,8 +15,9 @@ Production stays **headless**. This UI is optional for design and debugging.
 make demo
 ```
 
-Installs the editable Python package (if needed), starts the hello API on
-**http://127.0.0.1:8787**, and Vite on **http://127.0.0.1:5173**. Open:
+Installs deps if needed, then runs `python -m q_glass.examples.hello serve`,
+which starts the hello API on **http://127.0.0.1:8787** and Vite on
+**http://127.0.0.1:5173** (use `--headless` for API-only). Open:
 
 `http://127.0.0.1:5173/?adapter=http&api=http://127.0.0.1:8787`
 

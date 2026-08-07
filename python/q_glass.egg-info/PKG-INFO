@@ -27,10 +27,13 @@ pip install -e ".[dev]"
 # Run handlers once on the CLI
 python -m q_glass.examples.hello run --query "My question"
 
-# Serve HTTP API for the React HttpAdapter (port 8787)
+# Serve HTTP API + Vite UI (port 8787 / 5173)
 python -m q_glass.examples.hello serve
 
-# From the q_glass repo root (API + Vite)
+# API only
+python -m q_glass.examples.hello serve --headless
+
+# From the q_glass repo root
 make demo
 ```
 

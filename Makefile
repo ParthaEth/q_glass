@@ -13,14 +13,10 @@ install-py:
 node_modules:
 	npm install
 
+# Python serve starts the Vite UI unless --headless.
 demo: node_modules install-py
-	@echo "Starting Python API on :8787 and Vite UI…"
 	@echo "Open: http://127.0.0.1:5173/?adapter=http&api=http://127.0.0.1:8787"
-	@$(CONDA_ACTIVATE) && \
-		trap 'kill 0' EXIT INT TERM; \
-		(python -m q_glass.examples.hello serve --host 127.0.0.1 --port 8787) & \
-		sleep 0.8; \
-		npm run dev -- --host 127.0.0.1 --port 5173
+	@$(CONDA_ACTIVATE) && python -m q_glass.examples.hello serve
 
 demo-ui: node_modules
 	@echo "UI-only simulated mode (no Python handlers)"

@@ -24,13 +24,33 @@ def main(argv: list[str] | None = None) -> None:
 	parser.add_argument("--port", type=int, default=8787)
 	parser.add_argument("--query", default="Summarize the weekly report")
 	parser.add_argument("--stop-after", default=None)
+	parser.add_argument("--headless", action="store_true")
+	parser.add_argument("--ui-host", default="127.0.0.1")
+	parser.add_argument("--ui-port", type=int, default=5173)
+	parser.add_argument("--no-open", action="store_true")
 	args = parser.parse_args(argv[1:])
 
 	from q_glass.examples.hello import main as hello_main
 
-	hello_argv = [args.command, "--host", args.host, "--port", str(args.port), "--query", args.query]
+	hello_argv = [
+		args.command,
+		"--host",
+		args.host,
+		"--port",
+		str(args.port),
+		"--query",
+		args.query,
+		"--ui-host",
+		args.ui_host,
+		"--ui-port",
+		str(args.ui_port),
+	]
 	if args.stop_after:
 		hello_argv.extend(["--stop-after", args.stop_after])
+	if args.headless:
+		hello_argv.append("--headless")
+	if args.no_open:
+		hello_argv.append("--no-open")
 	hello_main(hello_argv)
 
 

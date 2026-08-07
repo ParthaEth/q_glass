@@ -1,13 +1,107 @@
 from __future__ import annotations
 
+import atexit
 import json
+import os
+import shutil
+import signal
+import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
 from q_glass.graph import Graph
 from q_glass.runtime import RuntimeSession
+
+
+def find_ui_root() -> Path | None:
+	"""Locate the q_glass frontend root (directory with package.json + src/App.tsx)."""
+	here = Path(__file__).resolve()
+	candidates = [here.parents[2], here.parents[1], Path.cwd()]
+	seen: set[Path] = set()
+	for start in candidates:
+		for p in [start, *start.parents]:
+			if p in seen:
+				continue
+			seen.add(p)
+			if (p / "package.json").is_file() and (p / "src" / "App.tsx").is_file():
+				return p
+	return None
+
+
+def dashboard_url(
+	*,
+	api_host: str = "127.0.0.1",
+	api_port: int = 8787,
+	ui_host: str = "127.0.0.1",
+	ui_port: int = 5173,
+) -> str:
+	"""URL that selects HttpAdapter (bare Vite :5173 is simulated-only)."""
+	return f"http://{ui_host}:{ui_port}/?adapter=http&api=http://{api_host}:{api_port}"
+
+
+def _print_dashboard_banner(url: str, *, api_host: str, api_port: int) -> None:
+	bar = "=" * 64
+	print(bar)
+	print("  q_glass dashboard  (real Python handlers via HttpAdapter)")
+	print()
+	print("  Open this URL in your browser:")
+	print(f"    {url}")
+	print()
+	print("  Do not use Vite's bare http://127.0.0.1:5173/ link —")
+	print("  that loads the simulated fixture, not your Python graph.")
+	print(f"  API: http://{api_host}:{api_port}")
+	print(bar)
+
+
+def _start_vite(
+	*,
+	api_host: str,
+	api_port: int,
+	ui_host: str = "127.0.0.1",
+	ui_port: int = 5173,
+) -> subprocess.Popen[Any] | None:
+	"""Spawn `npm run dev` (stdout/stderr silenced). Returns None if skipped."""
+	ui_root = find_ui_root()
+	if ui_root is None:
+		print("q_glass: UI root not found (no package.json); API-only mode.")
+		return None
+	npm = shutil.which("npm")
+	if not npm:
+		print("q_glass: npm not found on PATH; API-only mode.")
+		return None
+	if not (ui_root / "node_modules").is_dir():
+		print(f"q_glass: run `npm install` in {ui_root} first; API-only mode.")
+		return None
+
+	# Hide Vite's "Local: http://…:5173/" so users don't open simulated mode.
+	proc = subprocess.Popen(
+		[npm, "run", "dev", "--", "--host", ui_host, "--port", str(ui_port)],
+		cwd=str(ui_root),
+		stdout=subprocess.DEVNULL,
+		stderr=subprocess.DEVNULL,
+		start_new_session=True,
+	)
+
+	def _stop() -> None:
+		if proc.poll() is not None:
+			return
+		try:
+			os.killpg(proc.pid, signal.SIGTERM)
+		except (ProcessLookupError, PermissionError):
+			proc.terminate()
+		try:
+			proc.wait(timeout=5)
+		except subprocess.TimeoutExpired:
+			try:
+				os.killpg(proc.pid, signal.SIGKILL)
+			except (ProcessLookupError, PermissionError):
+				proc.kill()
+
+	atexit.register(_stop)
+	return proc
 
 
 def _cors(handler: BaseHTTPRequestHandler) -> None:
@@ -45,9 +139,26 @@ def serve(
 	host: str = "127.0.0.1",
 	port: int = 8787,
 	blocking: bool = True,
+	headless: bool = False,
+	ui_host: str = "127.0.0.1",
+	ui_port: int = 5173,
+	open_browser: bool = True,
 ) -> ThreadingHTTPServer:
-	"""Serve graph + session API for the React HttpAdapter."""
+	"""Serve graph + session API for the React HttpAdapter.
+
+	Unless ``headless`` is True (and ``blocking`` is True), also starts the Vite
+	dev server so the dashboard can talk to this API. Vite's console is silenced;
+	use the printed ``?adapter=http`` URL (not the bare :5173 link).
+	"""
 	runtime = RuntimeSession(graph)
+	ui_proc: subprocess.Popen[Any] | None = None
+	url = dashboard_url(
+		api_host=host, api_port=port, ui_host=ui_host, ui_port=ui_port
+	)
+	if blocking and not headless:
+		ui_proc = _start_vite(
+			api_host=host, api_port=port, ui_host=ui_host, ui_port=ui_port
+		)
 
 	class Handler(BaseHTTPRequestHandler):
 		def log_message(self, fmt: str, *args: Any) -> None:  # noqa: A003
@@ -125,15 +236,30 @@ def serve(
 
 	httpd = ThreadingHTTPServer((host, port), Handler)
 	if blocking:
-		print(f"q_glass API listening on http://{host}:{port}")
-		print(
-			f"Open UI: http://127.0.0.1:5173/?adapter=http&api=http://{host}:{port}"
-		)
+		_print_dashboard_banner(url, api_host=host, api_port=port)
+		if headless:
+			print("(headless — Vite not started; omit --headless for full demo)")
+		elif open_browser:
+			import time
+			import webbrowser
+
+			# Brief pause so Vite can bind before the tab loads.
+			time.sleep(0.6)
+			try:
+				webbrowser.open(url)
+			except Exception:  # noqa: BLE001
+				pass
 		try:
 			httpd.serve_forever()
 		except KeyboardInterrupt:
 			print("\nShutting down.")
+		finally:
 			httpd.shutdown()
+			if ui_proc is not None and ui_proc.poll() is None:
+				try:
+					os.killpg(ui_proc.pid, signal.SIGTERM)
+				except (ProcessLookupError, PermissionError):
+					ui_proc.terminate()
 	else:
 		thread = threading.Thread(target=httpd.serve_forever, daemon=True)
 		thread.start()
