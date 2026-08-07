@@ -17,9 +17,26 @@ is [`../src/fixtures/hello-pipeline.sample.json`](../src/fixtures/hello-pipeline
 
 | `kind` | Chart shape | Executor |
 |--------|-------------|----------|
-| `activity` | Rectangle | One unit of work — set `stageId` + `activityName` |
+| `activity` | Rectangle (process) | One unit of work — set `stageId` + `activityName` |
 | `decision` | Diamond | Branch — **no** activity |
 | `subgraph` | Group / child workflow | Optional nesting |
+
+### Visual type (`visualType`)
+
+Optional override for how the node is drawn. If omitted, defaults from `kind`:
+
+| `visualType` | Flowchart convention | Default for |
+|--------------|----------------------|-------------|
+| `rounded` | Process / activity | `activity` |
+| `rect` | Subroutine / group | `subgraph` |
+| `diamond` | Decision | `decision` |
+| `stadium` | Terminator (start/end) | *(set explicitly)* |
+
+Example:
+
+```json
+{ "id": "has_issues", "kind": "decision", "visualType": "diamond", "label": "OK?" }
+```
 
 ### Activity nodes
 

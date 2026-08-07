@@ -170,21 +170,90 @@ body,
 	max-width: 260px;
 	padding: 0.55rem 0.7rem;
 	border: 1.5px solid var(--line);
-	border-radius: 10px;
 	background: white;
 	box-shadow: 0 1px 2px rgb(0 0 0 / 6%);
 	font-size: 0.78rem;
 }
 
-.qg-node--decision {
-	border-color: var(--decision);
-	border-radius: 4px;
-	transform: rotate(0deg);
-	background: #fff6f0;
+.qg-node--rounded {
+	border-radius: 10px;
+	border-color: #9bb8af;
 }
 
-.qg-node--activity {
-	border-color: #9bb8af;
+.qg-node--rect {
+	border-radius: 2px;
+	border-color: #8a9aab;
+}
+
+.qg-node--stadium {
+	border-radius: 999px;
+	border-color: #6a7f9a;
+	padding-inline: 1.1rem;
+	text-align: center;
+}
+
+/* Flowchart decision diamond */
+.qg-diamond-wrap {
+	width: 168px;
+	height: 168px;
+	position: relative;
+	display: grid;
+	place-items: center;
+}
+
+.qg-diamond {
+	width: 118px;
+	height: 118px;
+	position: relative;
+	display: grid;
+	place-items: center;
+}
+
+.qg-diamond__face {
+	position: absolute;
+	inset: 0;
+	background: #fff6f0;
+	border: 1.5px solid var(--decision);
+	transform: rotate(45deg);
+	box-shadow: 0 1px 2px rgb(0 0 0 / 6%);
+}
+
+.qg-diamond__content {
+	position: relative;
+	z-index: 1;
+	width: 96px;
+	text-align: center;
+	font-size: 0.72rem;
+	line-height: 1.25;
+	pointer-events: none;
+}
+
+.qg-diamond-wrap .qg-handle {
+	z-index: 2;
+}
+
+.qg-diamond-wrap.qg-node--selected .qg-diamond__face {
+	border-color: #2a4b7c;
+	border-width: 2.5px;
+	box-shadow: 0 0 0 3px rgb(42 75 124 / 28%);
+	background: #eef3fa;
+}
+
+.qg-diamond-wrap.qg-node--running .qg-diamond__face {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 2px rgb(31 111 91 / 35%);
+	background: #e8f2ef;
+}
+
+.qg-diamond-wrap.qg-node--completed .qg-diamond__face {
+	border-color: #6a9a88;
+	background: #f3faf7;
+}
+
+.qg-diamond-wrap.qg-node--stop .qg-diamond__face {
+	border-color: var(--decision);
+	border-style: dashed;
+	box-shadow: 0 0 0 2px rgb(196 92 38 / 30%);
 }
 
 .qg-node--selected {

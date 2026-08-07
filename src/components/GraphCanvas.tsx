@@ -12,6 +12,7 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import type { GraphDefinition } from "../types/graph";
+import { resolveVisualType } from "../types/graph";
 import StageNode, { type StageNodeData } from "./StageNode";
 
 const nodeTypes: NodeTypes = {
@@ -48,6 +49,7 @@ export default function GraphCanvas({
 					data: {
 						label: n.label,
 						kind: n.kind,
+						visualType: resolveVisualType(n),
 						stageId: n.stageId,
 						runStatus,
 						isStop: n.id === stopAfterNodeId,
@@ -66,17 +68,23 @@ export default function GraphCanvas({
 
 	const edges: Edge[] = useMemo(
 		() =>
-			graph.edges.map((e) => ({
-				id: e.id,
-				source: e.source,
-				target: e.target,
-				label: e.label,
-				animated: Boolean(e.cycle) || e.target === currentNodeId,
-				style: e.cycle
-					? { stroke: "#c45c26", strokeDasharray: "6 4" }
-					: undefined,
-				markerEnd: { type: MarkerType.ArrowClosed },
-			})),
+			graph.edges.map((e) => {
+				const yes =
+					(e.label ?? "").toLowerCase() === "yes" ||
+					(e.label ?? "").toLowerCase() === "true";
+				return {
+					id: e.id,
+					source: e.source,
+					target: e.target,
+					sourceHandle: yes ? "yes" : undefined,
+					label: e.label,
+					animated: Boolean(e.cycle) || e.target === currentNodeId,
+					style: e.cycle
+						? { stroke: "#c45c26", strokeDasharray: "6 4" }
+						: undefined,
+					markerEnd: { type: MarkerType.ArrowClosed },
+				};
+			}),
 		[graph.edges, currentNodeId],
 	);
 

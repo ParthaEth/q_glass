@@ -2,13 +2,24 @@
 
 export type NodeKind = "activity" | "decision" | "subgraph";
 
+/**
+ * Flowchart-style shape. If omitted, derived from `kind`:
+ * activity → rounded, decision → diamond, subgraph → rect.
+ */
+export type NodeVisualType = "rounded" | "rect" | "diamond" | "stadium";
+
 export interface GraphNode {
 	id: string;
 	label: string;
 	kind: NodeKind;
+	/**
+	 * Optional override for how the node is drawn.
+	 * Defaults from `kind` when omitted.
+	 */
+	visualType?: NodeVisualType;
 	/** Catalog / stop_after stage name when kind === "activity". */
 	stageId?: string;
-	/** Temporal activity name when kind === "activity". */
+	/** Executor activity / task name when kind === "activity". */
 	activityName?: string;
 	/** Optional layout hint for the canvas. */
 	position?: { x: number; y: number };
@@ -58,4 +69,20 @@ export interface RunState {
 	stopAfter?: string;
 	nodeAttempts: Record<string, NodeAttempt[]>;
 	message?: string;
+}
+
+/** Resolve drawable shape from explicit visualType or kind defaults. */
+export function resolveVisualType(node: {
+	kind: NodeKind;
+	visualType?: NodeVisualType;
+}): NodeVisualType {
+	if (node.visualType) return node.visualType;
+	switch (node.kind) {
+		case "decision":
+			return "diamond";
+		case "subgraph":
+			return "rect";
+		default:
+			return "rounded";
+	}
 }

@@ -1,4 +1,5 @@
 import type { GraphNode, RunState } from "../types/graph";
+import { resolveVisualType } from "../types/graph";
 
 type Props = {
 	node: GraphNode | null;
@@ -20,6 +21,7 @@ export default function NodeInspector({ node, run, selectedNodeId }: Props) {
 		? (run?.nodeAttempts[selectedNodeId] ?? [])
 		: [];
 	const last = attempts[attempts.length - 1];
+	const visual = resolveVisualType(node);
 
 	return (
 		<aside className="qg-inspector">
@@ -35,6 +37,15 @@ export default function NodeInspector({ node, run, selectedNodeId }: Props) {
 					<dt>kind</dt>
 					<dd>
 						<code>{node.kind}</code>
+					</dd>
+				</div>
+				<div>
+					<dt>visual</dt>
+					<dd>
+						<code>{visual}</code>
+						{node.visualType ? null : (
+							<span className="qg-muted"> (from kind)</span>
+						)}
 					</dd>
 				</div>
 				{node.stageId ? (
