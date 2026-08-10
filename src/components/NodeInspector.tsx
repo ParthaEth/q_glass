@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import type { GraphNode, RunState } from "../types/graph";
 import { resolveVisualType } from "../types/graph";
+import JsonBlock from "./JsonBlock";
 
 type Props = {
 	node: GraphNode | null;
@@ -55,6 +56,9 @@ export default function NodeInspector({
 			setParseError(err instanceof Error ? err.message : "Invalid JSON");
 		}
 	};
+
+	const inputValue = last?.input ?? node.sampleInput ?? null;
+	const outputValue = last?.output ?? node.sampleOutput ?? null;
 
 	return (
 		<aside className="qg-inspector">
@@ -116,42 +120,31 @@ export default function NodeInspector({
 			</dl>
 
 			<section>
-				<h3>Input {isStartNode ? "(editable start)" : last ? "(last attempt)" : "(sample)"}</h3>
 				{isStartNode ? (
-					<>
-						<textarea
-							className="qg-json-edit"
-							value={draft}
-							spellCheck={false}
-							onChange={(e) => {
-								setDraft(e.target.value);
-								setParseError(null);
-							}}
-							onBlur={applyDraft}
-							rows={12}
-						/>
-						<div className="qg-inspector__row">
-							<button type="button" onClick={applyDraft}>
-								Apply input
-							</button>
-							{parseError ? (
-								<span className="qg-error">{parseError}</span>
-							) : (
-								<span className="qg-muted">JSON · blur or Apply</span>
-							)}
-						</div>
-					</>
+					<JsonBlock
+						title="Input (editable start)"
+						value={null}
+						editable
+						draft={draft}
+						onDraftChange={(next) => {
+							setDraft(next);
+							setParseError(null);
+						}}
+						onApply={applyDraft}
+						parseError={parseError}
+					/>
 				) : (
-					<pre className="qg-json">
-						{JSON.stringify(last?.input ?? node.sampleInput ?? null, null, 2)}
-					</pre>
+					<JsonBlock
+						title={last ? "Input (last attempt)" : "Input (sample)"}
+						value={inputValue}
+					/>
 				)}
 			</section>
 			<section>
-				<h3>Output {last ? "(last attempt)" : "(sample)"}</h3>
-				<pre className="qg-json">
-					{JSON.stringify(last?.output ?? node.sampleOutput ?? null, null, 2)}
-				</pre>
+				<JsonBlock
+					title={last ? "Output (last attempt)" : "Output (sample)"}
+					value={outputValue}
+				/>
 			</section>
 		</aside>
 	);
