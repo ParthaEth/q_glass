@@ -304,7 +304,9 @@ body,
 }
 
 .qg-node {
-	min-width: 180px;
+	box-sizing: border-box;
+	width: 260px;
+	min-width: 260px;
 	max-width: 260px;
 	padding: 0.55rem 0.7rem;
 	border: 1.5px solid var(--line);
@@ -506,6 +508,8 @@ body,
 
 .qg-node__label {
 	font-weight: 600;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 .qg-node__meta {
@@ -513,6 +517,8 @@ body,
 	color: var(--muted);
 	font-size: 0.68rem;
 	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 .qg-node__status {
