@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any
@@ -169,6 +170,7 @@ class RuntimeSession:
 
 	def __init__(self, graph: Graph) -> None:
 		self.graph = graph
+		self._lock = threading.Lock()
 		self.session = Session(
 			start_node_id=graph.entry_node_id(),
 			start_input=_default_sample(graph, graph.entry_node_id()),
@@ -243,6 +245,11 @@ class RuntimeSession:
 
 	def step(self) -> dict[str, Any]:
 		"""Advance one node from current (or start if idle)."""
+		with self._lock:
+			return self._step_locked()
+
+	def _step_locked(self) -> dict[str, Any]:
+		"""Advance one node from current (or start if idle)."""
 		graph = self.graph
 		sess = self.session
 
@@ -275,7 +282,21 @@ class RuntimeSession:
 		if cur == (sess.start_node_id or graph.entry_node_id()) and not sess.node_attempts.get(cur):
 			payload = deepcopy(sess.start_input or _default_sample(graph, cur))
 
-		out = run_node(graph, cur, payload)
+		try:
+			out = run_node(graph, cur, payload)
+		except Exception as exc:  # noqa: BLE001 — record failure; stay on node
+			n = len(sess.node_attempts.get(cur, [])) + 1
+			sess.node_attempts.setdefault(cur, []).append(
+				NodeAttempt(
+					attempt=n,
+					status="failed",
+					input=deepcopy(payload),
+					error=str(exc),
+				)
+			)
+			sess.message = f'Failed at "{cur}": {exc}'
+			return self.get_state()
+
 		n = len(sess.node_attempts.get(cur, [])) + 1
 		sess.node_attempts.setdefault(cur, []).append(
 			NodeAttempt(attempt=n, status="completed", input=deepcopy(payload), output=deepcopy(out))

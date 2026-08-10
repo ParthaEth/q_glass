@@ -44,6 +44,7 @@ graph = b.build()
 | `activity(id, handler, *, label=, visual_type=, sample_input=)` | Node with `(dict) → dict` handler. `sample_input` seeds the editable start panel only. |
 | `decision(id, *, label=)` | No handler; runtime follows Yes/No (or first non-cycle edge). |
 | `edge(source, target, *, label=, cycle=)` | Control-flow edge. Mark repair loops with `cycle=True`. |
+| `group(id, members, *, label=)` | Visual-only bounding box around member node ids (dashboard only; no runtime effect). |
 | `build()` | Returns an opaque `Graph`. |
 
 Handlers for v1 are plain callables: `(dict) -> dict`.

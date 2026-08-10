@@ -2,6 +2,7 @@ type Props = {
 	graphLabel: string;
 	adapterName: string;
 	supportsControl: boolean;
+	busy?: boolean;
 	startNodeId: string | null;
 	stopAfter: string | null;
 	hint: string | null;
@@ -17,6 +18,7 @@ export default function Toolbar({
 	graphLabel,
 	adapterName,
 	supportsControl,
+	busy = false,
 	startNodeId,
 	stopAfter,
 	hint,
@@ -27,6 +29,7 @@ export default function Toolbar({
 	onClearStop,
 	onStep,
 }: Props) {
+	const disabled = !supportsControl || busy;
 	return (
 		<header className="qg-toolbar">
 			<div className="qg-toolbar__brand">
@@ -35,6 +38,7 @@ export default function Toolbar({
 			</div>
 			<div className="qg-toolbar__actions">
 				<span className="qg-chip">adapter: {adapterName}</span>
+				{busy ? <span className="qg-chip qg-chip--busy">running…</span> : null}
 				{startNodeId ? (
 					<span className="qg-chip qg-chip--start" title="Run starts here">
 						start: {startNodeId}
@@ -45,26 +49,26 @@ export default function Toolbar({
 						stop: {stopAfter}
 					</span>
 				) : null}
-				<button type="button" disabled={!supportsControl} onClick={onStart}>
+				<button type="button" disabled={disabled} onClick={onStart}>
 					Start
 				</button>
-				<button type="button" disabled={!supportsControl} onClick={onSetStart}>
+				<button type="button" disabled={disabled} onClick={onSetStart}>
 					Set start
 				</button>
-				<button type="button" disabled={!supportsControl} onClick={onClearStart}>
+				<button type="button" disabled={disabled} onClick={onClearStart}>
 					Clear start
 				</button>
-				<button type="button" disabled={!supportsControl} onClick={onSetStop}>
+				<button type="button" disabled={disabled} onClick={onSetStop}>
 					Set stop
 				</button>
 				<button
 					type="button"
-					disabled={!supportsControl || !stopAfter}
+					disabled={disabled || !stopAfter}
 					onClick={onClearStop}
 				>
 					Clear stop
 				</button>
-				<button type="button" disabled={!supportsControl} onClick={onStep}>
+				<button type="button" disabled={disabled} onClick={onStep}>
 					Step next
 				</button>
 			</div>

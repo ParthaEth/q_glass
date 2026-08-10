@@ -59,6 +59,22 @@ completion.
 | `label` | e.g. `Yes` / `No` / `loop` |
 | `cycle` | Feedback / repair edge (animated in UI) |
 
+## Groups (visual only)
+
+Optional `groups` array draws a labeled bounding box around member nodes.
+Groups have **no runtime effect** — they do not change execution, selection, or
+handlers. Declare them from Python with `GraphBuilder.group(...)`.
+
+| Field | Meaning |
+|-------|---------|
+| `id` | Stable group id |
+| `label` | Title drawn on the box |
+| `members` | Node ids enclosed by the box |
+
+```python
+b.group("planning", ["draft_plan", "validate_plan"], label="Planning")
+```
+
 ## Attempts
 
 Loops **reuse** the same node id. Run state tracks

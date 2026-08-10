@@ -78,6 +78,30 @@ class TestBuilder:
 		assert len(ui["nodes"]) == 7
 		assert any(n["id"] == "has_issues" and n["kind"] == "decision" for n in ui["nodes"])
 		assert any(e.get("cycle") for e in ui["edges"])
+		assert ui["groups"] == [
+			{
+				"id": "planning",
+				"label": "Planning",
+				"members": ["draft_plan", "validate_plan"],
+			}
+		]
+
+	def test_group_rejects_unknown_member(self) -> None:
+		from q_glass import GraphBuilder
+
+		b = GraphBuilder("bad")
+		b.activity("a", lambda inp: inp)
+		b.group("g1", ["a", "missing"], label="Bad")
+		with pytest.raises(ValueError, match="member unknown"):
+			b.build()
+
+	def test_group_rejects_empty_members(self) -> None:
+		from q_glass import GraphBuilder
+
+		b = GraphBuilder("bad")
+		b.activity("a", lambda inp: inp)
+		with pytest.raises(ValueError, match="at least one member"):
+			b.group("g1", [])
 
 	def test_unknown_edge_rejected(self) -> None:
 		from q_glass import GraphBuilder

@@ -31,6 +31,15 @@ class EdgeSpec:
 
 
 @dataclass
+class GroupSpec:
+	"""Visual-only node grouping for the dashboard (no runtime effect)."""
+
+	id: str
+	label: str
+	members: list[str] = field(default_factory=list)
+
+
+@dataclass
 class Graph:
 	"""Opaque executable graph. Prefer GraphBuilder; do not hand-author JSON."""
 
@@ -40,6 +49,7 @@ class Graph:
 	description: str = ""
 	nodes: dict[str, NodeSpec] = field(default_factory=dict)
 	edges: list[EdgeSpec] = field(default_factory=list)
+	groups: list[GroupSpec] = field(default_factory=list)
 
 	def entry_node_id(self) -> str:
 		targets = {e.target for e in self.edges}
@@ -88,6 +98,10 @@ class Graph:
 			}
 			for e in self.edges
 		]
+		groups_out = [
+			{"id": g.id, "label": g.label, "members": list(g.members)}
+			for g in self.groups
+		]
 		return {
 			"id": self.id,
 			"version": self.version,
@@ -95,4 +109,5 @@ class Graph:
 			"description": self.description,
 			"nodes": nodes_out,
 			"edges": edges_out,
+			"groups": groups_out,
 		}

@@ -113,6 +113,11 @@ def build_hello_graph():
 	b.edge("has_issues", "repair", label="Yes")
 	b.edge("has_issues", "export_result", label="No")
 	b.edge("repair", "validate_plan", label="loop", cycle=True)
+	b.group(
+		"planning",
+		["draft_plan", "validate_plan"],
+		label="Planning",
+	)
 	return b.build()
 
 

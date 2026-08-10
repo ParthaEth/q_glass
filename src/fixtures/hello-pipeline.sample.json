@@ -90,5 +90,12 @@
       "label": "loop",
       "cycle": true
     }
+  ],
+  "groups": [
+    {
+      "id": "planning",
+      "label": "Planning",
+      "members": ["draft_plan", "validate_plan"]
+    }
   ]
 }

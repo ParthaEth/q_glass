@@ -37,6 +37,13 @@ export interface GraphEdge {
 	cycle?: boolean;
 }
 
+/** Visual-only cluster of nodes (bounding box + label). No runtime effect. */
+export interface GraphGroup {
+	id: string;
+	label: string;
+	members: string[];
+}
+
 export interface GraphDefinition {
 	id: string;
 	version: string;
@@ -44,6 +51,8 @@ export interface GraphDefinition {
 	description?: string;
 	nodes: GraphNode[];
 	edges: GraphEdge[];
+	/** Optional visual groupings drawn behind member nodes. */
+	groups?: GraphGroup[];
 }
 
 export type NodeRunStatus =

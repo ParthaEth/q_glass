@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from q_glass.graph import EdgeSpec, Graph, Handler, NodeSpec, VisualType
+from q_glass.graph import EdgeSpec, Graph, GroupSpec, Handler, NodeSpec, VisualType
 
 
 class GraphBuilder:
@@ -22,6 +22,7 @@ class GraphBuilder:
 		self._description = description
 		self._nodes: dict[str, NodeSpec] = {}
 		self._edges: list[EdgeSpec] = []
+		self._groups: dict[str, GroupSpec] = {}
 		self._edge_i = 0
 
 	def activity(
@@ -86,6 +87,25 @@ class GraphBuilder:
 		)
 		return self
 
+	def group(
+		self,
+		group_id: str,
+		members: list[str],
+		*,
+		label: str | None = None,
+	) -> GraphBuilder:
+		"""Declare a visual-only bounding box around ``members`` (dashboard only)."""
+		if not members:
+			raise ValueError(f"Group {group_id!r} requires at least one member")
+		if group_id in self._groups:
+			raise ValueError(f"Duplicate group id: {group_id}")
+		self._groups[group_id] = GroupSpec(
+			id=group_id,
+			label=label or group_id,
+			members=list(members),
+		)
+		return self
+
 	def build(self) -> Graph:
 		if not self._nodes:
 			raise ValueError("GraphBuilder requires at least one node")
@@ -97,6 +117,12 @@ class GraphBuilder:
 		for n in self._nodes.values():
 			if n.kind == "activity" and n.handler is None:
 				raise ValueError(f"Activity {n.id!r} missing handler")
+		for g in self._groups.values():
+			for member in g.members:
+				if member not in self._nodes:
+					raise ValueError(
+						f"Group {g.id!r} member unknown: {member}"
+					)
 		return Graph(
 			id=self._id,
 			label=self._label,
@@ -104,4 +130,5 @@ class GraphBuilder:
 			description=self._description,
 			nodes=dict(self._nodes),
 			edges=list(self._edges),
+			groups=list(self._groups.values()),
 		)

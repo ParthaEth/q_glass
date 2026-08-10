@@ -146,6 +146,11 @@ export default function NodeInspector({
 					value={outputValue}
 				/>
 			</section>
+			{last?.error ? (
+				<section>
+					<p className="qg-error">Last error: {last.error}</p>
+				</section>
+			) : null}
 		</aside>
 	);
 }

@@ -7,3 +7,9 @@ dist/
 !.env.example
 .vite/
 *.log
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+.eggs/
