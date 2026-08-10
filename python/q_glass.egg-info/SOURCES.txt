@@ -15,4 +15,9 @@ q_glass.egg-info/requires.txt
 q_glass.egg-info/top_level.txt
 q_glass/examples/__init__.py
 q_glass/examples/hello.py
+q_glass/visualizers/__init__.py
+q_glass/visualizers/registry.py
+q_glass/visualizers/specs.py
 tests/test_builder_runtime.py
+tests/test_runtime_session.py
+tests/test_visualizers.py

@@ -32,7 +32,7 @@ flowchart LR
 | **GraphDefinition** | Static topology + stage ids | JSON fixture + TypeScript types |
 | **UI** | Canvas, toolbar, inspector | React + Vite + React Flow |
 | **RuntimeAdapter** | Load graph, run state, stop/step | `SimulatedAdapter` / `NoopAdapter` |
-| **Visualizers** | Render I/O beyond JSON | Default JSON only |
+| **Visualizers** | Render I/O beyond JSON | JSON + Python `ViewSpec` tabs |
 
 ## Source of truth
 

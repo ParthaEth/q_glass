@@ -5,7 +5,7 @@
 | **P0** | Vite + React Flow scaffold, hello example, JSON inspector, docs | **Done** |
 | **P1** | Python API (`GraphBuilder`, `run_*`, `serve`) + real hello + HttpAdapter | **Done** |
 | **P2** | Trace dump writer (host) + `TraceDumpAdapter` loader | Planned |
-| **P3** | Visualizer plugin registry + host example plugins | Planned |
+| **P3** | Visualizer plugin registry (Python hosts) + hello example | **Done** |
 | **P4** | Subgraph nesting + multi-run browser | Planned |
 
 ## P0 acceptance
@@ -29,6 +29,8 @@ Typical integration lives in the **host** application:
 2. Call `serve(graph)` (or embed `run_from`) for the dashboard / CLI
 3. CI assert executor topology matches the built graph
 4. Optional dump writer beside existing artifact dirs
+5. Register Python visualizers (`@register_visualizer`) before `serve` for
+   domain View tabs in the inspector
 
 Do not put host product stage catalogs or domain pipelines into this repository.
 

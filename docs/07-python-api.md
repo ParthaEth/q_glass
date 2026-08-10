@@ -92,6 +92,23 @@ Stdlib HTTP control plane (CORS enabled for Vite):
 | `POST /api/session/set_start_input` | `{ "input": {…} }` |
 | `POST /api/session/step` | One step via handlers |
 | `POST /api/session/clear_start` / `clear_stop` | Reset markers |
+| `POST /api/visualize` | Host visualizers: `{ stageId, side, value }` → `ViewSpec` list |
+
+## Visualizers
+
+Register Python plugins before `serve` (see [04-visualizers.md](../docs/04-visualizers.md)):
+
+```python
+from q_glass import MarkdownView, register_visualizer, serve
+
+@register_visualizer(id="demo.out", match_stage="export_result", side="out", title="Summary")
+def viz(value: object) -> MarkdownView | None:
+    if not isinstance(value, dict):
+        return None
+    return MarkdownView(text=f"artifact=`{value.get('artifact')}`")
+
+serve(graph)
+```
 
 Open the UI with:
 

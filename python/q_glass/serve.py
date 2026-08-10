@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 from q_glass.graph import Graph
 from q_glass.runtime import RuntimeSession
+from q_glass.visualizers import render_all
 
 
 def find_ui_root() -> Path | None:
@@ -229,6 +230,20 @@ def serve(
 					value = body.get("input", body.get("startInput", body))
 					runtime.set_start_input(value)
 					_send_json(self, 200, runtime.get_state())
+					return
+				if path in ("/api/visualize", "/visualize"):
+					stage_id = body.get("stageId") or body.get("nodeId")
+					if not stage_id:
+						raise ValueError("stageId or nodeId required")
+					side = body.get("side", "out")
+					if side not in ("in", "out"):
+						raise ValueError("side must be 'in' or 'out'")
+					visualizers = render_all(
+						str(stage_id),
+						side,  # type: ignore[arg-type]
+						body.get("value"),
+					)
+					_send_json(self, 200, {"visualizers": visualizers})
 					return
 				_send_json(self, 404, {"error": f"not found: {path}"})
 			except Exception as exc:  # noqa: BLE001

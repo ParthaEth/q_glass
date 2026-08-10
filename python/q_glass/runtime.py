@@ -190,12 +190,22 @@ class RuntimeSession:
 		self.session.start_node_id = node_id
 		if not same:
 			self.session.start_input = _default_sample(self.graph, node_id)
-		self.session.message = f'Start set at "{node_id}". Edit input, then Start.'
+		# Park the execution cursor at start so Step does not keep walking from
+		# the graph entry (or a previous mid-run node).
+		self.session.current_node_id = node_id
+		self.session.node_attempts = {}
+		self._cursor_payload = None
+		self.session.message = (
+			f'Start set at "{node_id}". Edit input, then Start or Step next.'
+		)
 
 	def clear_start(self) -> None:
 		entry = self.graph.entry_node_id()
 		self.session.start_node_id = entry
 		self.session.start_input = _default_sample(self.graph, entry)
+		self.session.current_node_id = entry
+		self.session.node_attempts = {}
+		self._cursor_payload = None
 		self.session.message = f'Start cleared → entry "{entry}".'
 
 	def set_stop(self, node_id: str) -> None:
@@ -248,10 +258,18 @@ class RuntimeSession:
 		with self._lock:
 			return self._step_locked()
 
+	def _has_completed_progress(self) -> bool:
+		return any(
+			a.status == "completed"
+			for attempts in self.session.node_attempts.values()
+			for a in attempts
+		)
+
 	def _step_locked(self) -> dict[str, Any]:
 		"""Advance one node from current (or start if idle)."""
 		graph = self.graph
 		sess = self.session
+		start_id = sess.start_node_id or graph.entry_node_id()
 
 		# Resume past stop
 		cur = sess.current_node_id
@@ -268,18 +286,28 @@ class RuntimeSession:
 			)
 			return self.get_state()
 
-		if cur is None:
-			# begin at start
-			cur = sess.start_node_id or graph.entry_node_id()
+		# Idle / no successful progress → always begin at the configured start
+		# (not the graph entry), even if current_node_id still points at entry.
+		if cur is None or not self._has_completed_progress():
+			cur = start_id
 			self._cursor_payload = deepcopy(
 				sess.start_input or _default_sample(graph, cur)
 			)
 			sess.current_node_id = cur
-			sess.node_attempts = {}
+			if not sess.node_attempts.get(cur):
+				# Keep failed attempts on the start node for retry visibility;
+				# drop attempts from other nodes left over before set_start.
+				sess.node_attempts = {
+					nid: attempts
+					for nid, attempts in sess.node_attempts.items()
+					if nid == cur
+				}
 
 		assert cur is not None
 		payload = deepcopy(self._cursor_payload or {})
-		if cur == (sess.start_node_id or graph.entry_node_id()) and not sess.node_attempts.get(cur):
+		if cur == start_id and not any(
+			a.status == "completed" for a in sess.node_attempts.get(cur, [])
+		):
 			payload = deepcopy(sess.start_input or _default_sample(graph, cur))
 
 		try:

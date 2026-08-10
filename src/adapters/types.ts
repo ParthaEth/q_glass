@@ -1,4 +1,5 @@
 import type { GraphDefinition, RunState } from "../types/graph";
+import type { VisualizeResponse, VisualizerResult } from "../visualizers/types";
 
 /** Pluggable backend: live orchestrator or offline trace dumps. */
 export interface RuntimeAdapter {
@@ -15,6 +16,14 @@ export interface RuntimeAdapter {
 	setStartInput?(runId: string, value: unknown): Promise<void>;
 	step(runId: string): Promise<void>;
 	start(input?: unknown): Promise<string>;
+
+	/** Python host visualizers via ``POST /api/visualize`` (HttpAdapter). */
+	visualize?(args: {
+		stageId: string;
+		nodeId: string;
+		side: "in" | "out";
+		value: unknown;
+	}): Promise<VisualizerResult[]>;
 }
 
 export class AdapterNotWiredError extends Error {

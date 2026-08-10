@@ -55,6 +55,21 @@ export default function App() {
 
 	const runId = run?.runId ?? "session-1";
 
+	const visualize = useCallback(
+		(args: {
+			stageId: string;
+			nodeId: string;
+			side: "in" | "out";
+			value: unknown;
+		}) => {
+			if (!adapter.visualize) {
+				return Promise.resolve([]);
+			}
+			return adapter.visualize(args);
+		},
+		[],
+	);
+
 	const refreshRun = useCallback(async (opts?: { followCurrent?: boolean }) => {
 		const state = await adapter.getRunState(runId);
 		setRun(state);
@@ -224,6 +239,7 @@ export default function App() {
 					run={run}
 					selectedNodeId={selectedNodeId}
 					onStartInputChange={onStartInputChange}
+					visualize={adapter.visualize ? visualize : undefined}
 				/>
 			</main>
 		</div>

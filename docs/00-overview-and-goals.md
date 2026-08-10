@@ -18,7 +18,7 @@ glass box**, not a second executor.
 1. Display a **static `GraphDefinition`** registered by the host (one node per
    work box; decisions and loops as first-class structure).
 2. Default **raw JSON** I/O for every stage; allow hosts to attach **custom
-   visualizers**.
+   visualizers** (Python → declarative `ViewSpec`; see [04](./04-visualizers.md)).
 3. **Live mode**: drive host stop/step/query hooks via a runtime adapter
    (see [03-runtime-adapters.md](./03-runtime-adapters.md)).
 4. **Replay mode**: load a [trace dump](./05-trace-dumps.md) with no cluster.
@@ -37,9 +37,9 @@ glass box**, not a second executor.
 - [x] `make demo` opens a React Flow canvas with the hello example graph
 - [x] Click node → sample input/output JSON in the inspector
 - [x] Simulated Start / Set stop / Step next
-- [ ] Live orchestrator adapter
+- [x] HttpAdapter live Python serve
 - [ ] Trace dump loader
-- [ ] Visualizer plugin registry
+- [x] Visualizer plugin registry (Python hosts + generic ViewSpec UI)
 
 ## Related
 

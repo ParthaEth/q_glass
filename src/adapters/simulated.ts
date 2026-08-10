@@ -83,7 +83,10 @@ export class SimulatedAdapter implements RuntimeAdapter {
 			startInput: same
 				? (this.run.startInput ?? this.defaultStartInput(node.id))
 				: this.defaultStartInput(node.id),
-			message: `Start set at "${node.id}". Edit its input, then click Start to run from there.`,
+			// Park cursor at start so Step does not keep walking from entry.
+			currentNodeId: node.id,
+			nodeAttempts: {},
+			message: `Start set at "${node.id}". Edit its input, then Start or Step next.`,
 		};
 	}
 
@@ -92,6 +95,8 @@ export class SimulatedAdapter implements RuntimeAdapter {
 			...this.run,
 			startNodeId: this.entryId,
 			startInput: this.defaultStartInput(this.entryId),
+			currentNodeId: this.entryId,
+			nodeAttempts: {},
 			message: `Start cleared → entry "${this.entryId}".`,
 		};
 	}

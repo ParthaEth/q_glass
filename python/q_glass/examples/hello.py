@@ -121,6 +121,48 @@ def build_hello_graph():
 	return b.build()
 
 
+def _register_hello_visualizers() -> None:
+	"""Tiny demo visualizers — prove the Python host plugin path."""
+	from q_glass import MarkdownView, TableView, register_visualizer
+
+	@register_visualizer(
+		id="hello.draftPlan",
+		match_stage="draft_plan",
+		side="out",
+		title="Plan",
+	)
+	def viz_draft_plan(value: object) -> TableView | MarkdownView | None:
+		if not isinstance(value, dict):
+			return None
+		plan = value.get("plan")
+		if not isinstance(plan, list) or not plan:
+			return MarkdownView(text="_No plan steps._")
+		return TableView(
+			columns=["step", "name"],
+			rows=[[i + 1, str(step)] for i, step in enumerate(plan)],
+		)
+
+	@register_visualizer(
+		id="hello.export",
+		match_stage="export_result",
+		side="out",
+		title="Export",
+	)
+	def viz_export(value: object) -> MarkdownView | None:
+		if not isinstance(value, dict):
+			return None
+		query = value.get("query", "")
+		artifact = value.get("artifact", "")
+		ok = value.get("ok")
+		return MarkdownView(
+			text=(
+				f"**Artifact:** `{artifact}`\n\n"
+				f"**Query:** {query}\n\n"
+				f"**OK:** {ok}"
+			)
+		)
+
+
 def main(argv: list[str] | None = None) -> None:
 	import argparse
 	import json
@@ -158,6 +200,7 @@ def main(argv: list[str] | None = None) -> None:
 	args = parser.parse_args(argv)
 
 	graph = build_hello_graph()
+	_register_hello_visualizers()
 	if args.command == "run":
 		result = run_from(
 			graph,

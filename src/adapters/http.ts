@@ -1,4 +1,5 @@
 import type { GraphDefinition, RunState } from "../types/graph";
+import type { VisualizeResponse, VisualizerResult } from "../visualizers/types";
 import type { RuntimeAdapter } from "./types";
 
 function apiBase(): string {
@@ -74,6 +75,21 @@ export class HttpAdapter implements RuntimeAdapter {
 			input !== undefined ? { startInput: input } : {};
 		const state = await postJson<RunState>("/api/session/start", body);
 		return state.runId;
+	}
+
+	async visualize(args: {
+		stageId: string;
+		nodeId: string;
+		side: "in" | "out";
+		value: unknown;
+	}): Promise<VisualizerResult[]> {
+		const res = await postJson<VisualizeResponse>("/api/visualize", {
+			stageId: args.stageId,
+			nodeId: args.nodeId,
+			side: args.side,
+			value: args.value,
+		});
+		return res.visualizers ?? [];
 	}
 }
 

@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 
+import type { RuntimeAdapter } from "../adapters/types";
 import type { GraphNode, RunState } from "../types/graph";
 import { resolveVisualType } from "../types/graph";
-import JsonBlock from "./JsonBlock";
+import IoPane from "../visualizers/IoPane";
 
 type Props = {
 	node: GraphNode | null;
 	run: RunState | null;
 	selectedNodeId: string | null;
 	onStartInputChange: (value: unknown) => void;
+	visualize?: RuntimeAdapter["visualize"];
 };
 
 export default function NodeInspector({
@@ -16,6 +18,7 @@ export default function NodeInspector({
 	run,
 	selectedNodeId,
 	onStartInputChange,
+	visualize,
 }: Props) {
 	const isStartNode = Boolean(
 		node && run?.startNodeId && node.id === run.startNodeId,
@@ -46,6 +49,7 @@ export default function NodeInspector({
 		: [];
 	const last = attempts[attempts.length - 1];
 	const visual = resolveVisualType(node);
+	const stageKey = node.stageId ?? node.id;
 
 	const applyDraft = () => {
 		try {
@@ -121,9 +125,13 @@ export default function NodeInspector({
 
 			<section>
 				{isStartNode ? (
-					<JsonBlock
-						title="Input (editable start)"
-						value={null}
+					<IoPane
+						jsonTitle="Input (editable start)"
+						value={run?.startInput ?? node.sampleInput ?? null}
+						stageId={stageKey}
+						nodeId={node.id}
+						side="in"
+						visualize={visualize}
 						editable
 						draft={draft}
 						onDraftChange={(next) => {
@@ -134,16 +142,24 @@ export default function NodeInspector({
 						parseError={parseError}
 					/>
 				) : (
-					<JsonBlock
-						title={last ? "Input (last attempt)" : "Input (sample)"}
+					<IoPane
+						jsonTitle={last ? "Input (last attempt)" : "Input (sample)"}
 						value={inputValue}
+						stageId={stageKey}
+						nodeId={node.id}
+						side="in"
+						visualize={visualize}
 					/>
 				)}
 			</section>
 			<section>
-				<JsonBlock
-					title={last ? "Output (last attempt)" : "Output (sample)"}
+				<IoPane
+					jsonTitle={last ? "Output (last attempt)" : "Output (sample)"}
 					value={outputValue}
+					stageId={stageKey}
+					nodeId={node.id}
+					side="out"
+					visualize={visualize}
 				/>
 			</section>
 			{last?.error ? (
