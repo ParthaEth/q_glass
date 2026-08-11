@@ -1,4 +1,11 @@
-import { useEffect, useId, useState, type ReactNode } from "react";
+import {
+	useEffect,
+	useId,
+	useRef,
+	useState,
+	type ReactNode,
+	type Ref,
+} from "react";
 
 type JsonBlockProps = {
 	title: string;
@@ -108,6 +115,15 @@ function formatValue(value: unknown): string {
 	}
 }
 
+function selectElementContents(el: HTMLElement): void {
+	const selection = window.getSelection();
+	if (!selection) return;
+	const range = document.createRange();
+	range.selectNodeContents(el);
+	selection.removeAllRanges();
+	selection.addRange(range);
+}
+
 /** Pretty JSON panel with wrap, color tokens, and expand-to-modal. */
 export default function JsonBlock({
 	title,
@@ -120,15 +136,39 @@ export default function JsonBlock({
 }: JsonBlockProps) {
 	const [open, setOpen] = useState(false);
 	const titleId = useId();
+	const bodyRef = useRef<HTMLPreElement | HTMLTextAreaElement | null>(null);
 	const text = editable ? (draft ?? "") : formatValue(value);
 
 	useEffect(() => {
 		if (!open) return;
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") setOpen(false);
+			if (e.key === "Escape") {
+				setOpen(false);
+				return;
+			}
+			const selectAll =
+				(e.key === "a" || e.key === "A") && (e.metaKey || e.ctrlKey);
+			if (!selectAll) return;
+			const target = bodyRef.current;
+			if (!target) return;
+			// Keep select-all inside this modal body (not the whole page / graph).
+			e.preventDefault();
+			e.stopPropagation();
+			if (target instanceof HTMLTextAreaElement) {
+				target.focus();
+				target.select();
+				return;
+			}
+			selectElementContents(target);
 		};
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
+		window.addEventListener("keydown", onKey, true);
+		return () => window.removeEventListener("keydown", onKey, true);
+	}, [open]);
+
+	useEffect(() => {
+		if (!open) return;
+		// Focus body so copy/select shortcuts apply here immediately.
+		bodyRef.current?.focus({ preventScroll: true });
 	}, [open]);
 
 	const panel = (
@@ -154,6 +194,7 @@ export default function JsonBlock({
 			</div>
 			{editable ? (
 				<textarea
+					ref={bodyRef as Ref<HTMLTextAreaElement>}
 					className="qg-json-edit"
 					value={text}
 					spellCheck={false}
@@ -163,7 +204,12 @@ export default function JsonBlock({
 					rows={open ? 28 : 14}
 				/>
 			) : (
-				<pre className="qg-json" aria-labelledby={titleId}>
+				<pre
+					ref={bodyRef as Ref<HTMLPreElement>}
+					className="qg-json"
+					aria-labelledby={titleId}
+					tabIndex={open ? 0 : undefined}
+				>
 					{highlightJson(text)}
 				</pre>
 			)}

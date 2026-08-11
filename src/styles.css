@@ -163,6 +163,8 @@ body,
 	overflow-wrap: anywhere;
 	word-break: break-word;
 	tab-size: 2;
+	user-select: text;
+	outline: none;
 }
 
 .qg-json-line {
