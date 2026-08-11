@@ -73,17 +73,32 @@ def _default_sample(graph: Graph, node_id: str) -> dict[str, Any]:
 	return {}
 
 
+def _decision_want_yes(payload: dict[str, Any] | None) -> bool:
+	"""Resolve Yes/No for decision diamonds.
+
+	Precedence:
+	1. Explicit ``decision_yes`` boolean (preferred for multi-decision graphs).
+	2. Legacy: non-empty ``issues`` list → Yes (hello-pipeline repair branch).
+	"""
+	if not isinstance(payload, dict):
+		return False
+	if "decision_yes" in payload:
+		return bool(payload.get("decision_yes"))
+	issues = payload.get("issues") or []
+	return bool(issues)
+
+
 def _next_node_id(graph: Graph, from_id: str, payload: dict[str, Any] | None) -> str | None:
-	outs = [e for e in graph.edges if e.source == from_id and not e.cycle]
-	if not outs:
-		# Allow sole cycle edges (e.g. repair → validate loop-back).
-		outs = [e for e in graph.edges if e.source == from_id]
+	all_outs = [e for e in graph.edges if e.source == from_id]
+	# Prefer forward edges, but decisions must also see cycle-labeled Yes/No
+	# branches (e.g. more_spans? Yes → choose_resource).
+	outs = [e for e in all_outs if not e.cycle] or all_outs
 	if not outs:
 		return None
 	node = graph.nodes[from_id]
 	if node.kind == "decision":
-		issues = (payload or {}).get("issues") or []
-		want_yes = bool(issues)
+		outs = all_outs
+		want_yes = _decision_want_yes(payload)
 		for e in outs:
 			label = (e.label or "").lower()
 			if want_yes and label in ("yes", "true"):
@@ -134,7 +149,8 @@ def run_from(
 	final: dict[str, Any] | None = None
 	stopped: str | None = None
 	guard = 0
-	max_steps = len(graph.nodes) + 16
+	# Loops (BG segment placement, repair) reuse nodes; allow many iterations.
+	max_steps = max(len(graph.nodes) * 12, 64)
 
 	while current and guard < max_steps:
 		guard += 1

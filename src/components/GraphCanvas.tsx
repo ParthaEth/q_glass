@@ -186,24 +186,59 @@ function GraphCanvasInner({
 	const edges: Edge[] = useMemo(
 		() =>
 			graph.edges.map((e) => {
-				const yes =
-					(e.label ?? "").toLowerCase() === "yes" ||
-					(e.label ?? "").toLowerCase() === "true";
+				const label = (e.label ?? "").toLowerCase();
+				const yes = label === "yes" || label === "true";
+				const no = label === "no" || label === "false";
+				const cycle = Boolean(e.cycle);
+				const src = graph.nodes.find((n) => n.id === e.source);
+				const dst = graph.nodes.find((n) => n.id === e.target);
+				const dy = (dst?.position?.y ?? 0) - (src?.position?.y ?? 0);
+				const dx = (dst?.position?.x ?? 0) - (src?.position?.x ?? 0);
+				// Long same-column No (Has spans? → music): keep a left gutter
+				// so the arm never cuts through the spine blocks.
+				const leftSkip = no && !cycle && dy > 500;
+				// Short Yes that continues down the spine (Has spans? → choose)
+				// leaves the diamond bottom; side-branch Yes stays on the right.
+				const yesDown = yes && !cycle && dy > 40 && dx < 120;
+				// Yes → right; leftSkip → left corridor; short No → bottom;
+				// cycle Yes → right corridor into activity `loop` handle.
+				let sourceHandle: string | undefined;
+				let targetHandle: string | undefined;
+				if (cycle && yes) {
+					sourceHandle = "yes";
+					targetHandle = "loop";
+				} else if (yesDown) {
+					sourceHandle = "out";
+				} else if (yes) {
+					sourceHandle = "yes";
+				} else if (leftSkip) {
+					sourceHandle = "no";
+					targetHandle = "skip";
+				} else if (no) {
+					sourceHandle = "out";
+				}
 				return {
 					id: e.id,
 					source: e.source,
 					target: e.target,
-					sourceHandle: yes ? "yes" : undefined,
+					sourceHandle,
+					targetHandle,
 					label: e.label,
-					animated: Boolean(e.cycle) || e.target === currentNodeId,
-					style: e.cycle
+					type: cycle || yes || no ? "smoothstep" : "default",
+					pathOptions: leftSkip
+						? { borderRadius: 20, offset: 96 }
+						: cycle
+							? { borderRadius: 16, offset: 28 }
+							: { borderRadius: 12 },
+					animated: cycle || e.target === currentNodeId,
+					style: cycle
 						? { stroke: "#c45c26", strokeDasharray: "6 4" }
 						: undefined,
 					markerEnd: { type: MarkerType.ArrowClosed },
 					zIndex: 0,
 				};
 			}),
-		[graph.edges, currentNodeId],
+		[graph.edges, graph.nodes, currentNodeId],
 	);
 
 	const onNodeClick = useCallback(

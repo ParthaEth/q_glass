@@ -63,6 +63,61 @@ class TestHelloRuntime:
 		assert "repair" not in result.path
 		assert result.path[-1] == "export_result"
 
+	def test_decision_yes_flag_routes_yes_edge(self) -> None:
+		from q_glass import GraphBuilder
+		from q_glass.runtime import run_from
+
+		b = GraphBuilder("decisions")
+		b.activity("start", lambda inp: {**inp, "decision_yes": True}, sample_input={})
+		b.decision("branch", label="Go?")
+		b.activity("yes_path", lambda inp: {**inp, "took": "yes"})
+		b.activity("no_path", lambda inp: {**inp, "took": "no"})
+		b.edge("start", "branch")
+		b.edge("branch", "yes_path", label="Yes")
+		b.edge("branch", "no_path", label="No")
+		result = run_from(b.build(), start="start", input={})
+		assert result.path == ["start", "branch", "yes_path"]
+		assert result.final_output["took"] == "yes"
+
+	def test_decision_yes_false_routes_no_edge(self) -> None:
+		from q_glass import GraphBuilder
+		from q_glass.runtime import run_from
+
+		b = GraphBuilder("decisions2")
+		b.activity("start", lambda inp: {**inp, "decision_yes": False}, sample_input={})
+		b.decision("branch", label="Go?")
+		b.activity("yes_path", lambda inp: {**inp, "took": "yes"})
+		b.activity("no_path", lambda inp: {**inp, "took": "no"})
+		b.edge("start", "branch")
+		b.edge("branch", "yes_path", label="Yes")
+		b.edge("branch", "no_path", label="No")
+		result = run_from(b.build(), start="start", input={})
+		assert result.path[-1] == "no_path"
+
+	def test_decision_yes_cycle_edge_still_routes(self) -> None:
+		"""Yes branches marked cycle=True must not be filtered out of routing."""
+		from q_glass import GraphBuilder
+		from q_glass.runtime import run_from
+
+		# First pass: Yes cycles back; second pass flips to No.
+		calls = {"n": 0}
+
+		def start_handler(inp: dict) -> dict:
+			calls["n"] += 1
+			return {**inp, "decision_yes": calls["n"] < 2, "n": calls["n"]}
+
+		b = GraphBuilder("cycle_decision")
+		b.activity("start", start_handler, sample_input={})
+		b.decision("more", label="More?")
+		b.activity("done", lambda inp: {**inp, "took": "done"})
+		b.edge("start", "more")
+		b.edge("more", "start", label="Yes", cycle=True)
+		b.edge("more", "done", label="No")
+		result = run_from(b.build(), start="start", input={})
+		assert result.path.count("start") == 2
+		assert result.path[-1] == "done"
+		assert result.final_output["took"] == "done"
+
 	def test_run_node_decision_passthrough(self) -> None:
 		graph = build_hello_graph()
 		payload = {"issues": ["empty_plan"], "plan": []}

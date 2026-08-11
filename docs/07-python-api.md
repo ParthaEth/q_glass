@@ -66,7 +66,8 @@ result = run_from(
 
 - **`run_node`** — invoke one handler (decisions return input unchanged).
 - **`run_from`** — walk the happy path, record per-node attempts, stop after completing `stop_after` if set.
-- Decisions: if payload `issues` is non-empty → **Yes** edge; else **No**.
+- Decisions: if payload `decision_yes` is set, that boolean selects **Yes**/**No**;
+  otherwise legacy fallback — non-empty `issues` → **Yes**, else **No**.
 
 ## Serve (dashboard)
 

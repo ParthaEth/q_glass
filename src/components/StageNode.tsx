@@ -52,16 +52,25 @@ function StageNode({ data, selected }: NodeProps<Node<StageNodeData>>) {
 						{statusBits(data, selected)}
 					</div>
 				</div>
+				{/* No / continue down the spine */}
 				<Handle
 					type="source"
 					position={Position.Bottom}
 					id="out"
 					className="qg-handle"
 				/>
+				{/* Yes → side branch (or cycle corridor on the right) */}
 				<Handle
 					type="source"
 					position={Position.Right}
 					id="yes"
+					className="qg-handle"
+				/>
+				{/* Skip / long No edges route on the left margin */}
+				<Handle
+					type="source"
+					position={Position.Left}
+					id="no"
 					className="qg-handle"
 				/>
 			</div>
@@ -77,7 +86,12 @@ function StageNode({ data, selected }: NodeProps<Node<StageNodeData>>) {
 
 	return (
 		<div className={`qg-node ${shapeClass} ${stateClass}`.trim()}>
+			{/* Default inbound (no handle id) — keeps linear edges simple */}
 			<Handle type="target" position={Position.Top} />
+			{/* Long No skips enter from the left margin (e.g. Has spans? → music) */}
+			<Handle type="target" position={Position.Left} id="skip" />
+			{/* Cycle edges re-enter from the right so loops stay off the spine */}
+			<Handle type="target" position={Position.Right} id="loop" />
 			<div className="qg-node__label">{data.label}</div>
 			{data.stageId ? (
 				<div className="qg-node__meta">{data.stageId}</div>
