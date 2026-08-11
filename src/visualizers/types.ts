@@ -20,6 +20,32 @@ export type TimelineViewSpec = {
 	duration?: number | null;
 };
 
+export type TrackSegment = {
+	id: string;
+	start: number;
+	end: number;
+	label?: string | null;
+	resource_id?: string | null;
+	kind?: string | null;
+	source_from?: string | null;
+	source_until?: string | null;
+	color?: string | null;
+};
+
+export type TimelineTrack = {
+	id: string;
+	label: string;
+	segments: TrackSegment[];
+	kind?: string | null;
+};
+
+export type TracksTimelineViewSpec = {
+	kind: "tracks_timeline";
+	tracks: TimelineTrack[];
+	duration?: number | null;
+	anchors?: TimelineAnchor[] | null;
+};
+
 export type MarkdownViewSpec = {
 	kind: "markdown";
 	text: string;
@@ -33,6 +59,7 @@ export type HtmlViewSpec = {
 export type ViewSpec =
 	| TableViewSpec
 	| TimelineViewSpec
+	| TracksTimelineViewSpec
 	| MarkdownViewSpec
 	| HtmlViewSpec;
 

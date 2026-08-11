@@ -1,4 +1,5 @@
 import type { ViewSpec } from "./types";
+import TracksTimelineView from "./TracksTimelineView";
 import TimelineView from "./TimelineView";
 
 function cellText(value: unknown): string {
@@ -65,6 +66,10 @@ export default function ViewSpecRenderer({ view }: Props) {
 
 	if (view.kind === "timeline") {
 		return <TimelineView view={view} />;
+	}
+
+	if (view.kind === "tracks_timeline") {
+		return <TracksTimelineView view={view} />;
 	}
 
 	if (view.kind === "markdown") {

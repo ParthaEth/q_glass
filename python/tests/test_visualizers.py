@@ -12,7 +12,10 @@ from q_glass.visualizers import (
 	MarkdownView,
 	TableView,
 	TimelineAnchor,
+	TimelineTrack,
 	TimelineView,
+	TrackSegment,
+	TracksTimelineView,
 	clear_visualizers,
 	register_visualizer,
 	render_all,
@@ -51,6 +54,32 @@ class TestViewSpecSerialization:
 		assert payload["duration"] == 10.5
 		assert payload["anchors"][0] == {"id": "start", "t": 0.0, "label": "Begin"}
 		assert payload["anchors"][1]["label"] is None
+
+	def test_tracks_timeline_shape(self) -> None:
+		view = TracksTimelineView(
+			tracks=[
+				TimelineTrack(
+					id="bg",
+					label="Background",
+					segments=[
+						TrackSegment(
+							id="s1",
+							start=0.0,
+							end=3.5,
+							label="clip_a",
+							resource_id="asset_1",
+							kind="video",
+						)
+					],
+				)
+			],
+			duration=8.0,
+			anchors=[TimelineAnchor(id="a0", t=0.0), TimelineAnchor(id="a1", t=8.0)],
+		)
+		payload = view_spec_to_dict(view)
+		assert payload["kind"] == "tracks_timeline"
+		assert payload["tracks"][0]["segments"][0]["resource_id"] == "asset_1"
+		assert payload["duration"] == 8.0
 
 
 class TestRegistryResolve:

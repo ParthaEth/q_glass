@@ -1,5 +1,5 @@
 import type { GraphDefinition, RunState } from "../types/graph";
-import type { VisualizeResponse, VisualizerResult } from "../visualizers/types";
+import type { VisualizerResult } from "../visualizers/types";
 
 /** Pluggable backend: live orchestrator or offline trace dumps. */
 export interface RuntimeAdapter {

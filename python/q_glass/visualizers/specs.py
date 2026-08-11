@@ -1,23 +1,23 @@
-"""Declarative view specs rendered by generic q_glass React widgets."""
+"""Declarative visualizer view specs for Python hosts."""
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from typing import Any, Literal, Union
+from dataclasses import asdict, dataclass
+from typing import Literal, Union
 
 
 @dataclass(frozen=True)
 class TableView:
-	"""Simple table: column headers + row cells."""
+	"""Simple table rendering."""
 
 	columns: list[str]
-	rows: list[list[Any]] = field(default_factory=list)
+	rows: list[list[object]]
 	kind: Literal["table"] = "table"
 
 
 @dataclass(frozen=True)
 class TimelineAnchor:
-	"""One labeled point on a timeline."""
+	"""Point-in-time marker for event timelines."""
 
 	id: str
 	t: float
@@ -26,16 +26,51 @@ class TimelineAnchor:
 
 @dataclass(frozen=True)
 class TimelineView:
-	"""Ordered anchors on a shared clock."""
+	"""Single-rail timeline with anchors."""
 
-	anchors: list[TimelineAnchor] = field(default_factory=list)
+	anchors: list[TimelineAnchor]
 	duration: float | None = None
 	kind: Literal["timeline"] = "timeline"
 
 
 @dataclass(frozen=True)
+class TrackSegment:
+	"""One placed segment in a track timeline."""
+
+	id: str
+	start: float
+	end: float
+	label: str | None = None
+	resource_id: str | None = None
+	kind: str | None = None
+	source_from: str | None = None
+	source_until: str | None = None
+	color: str | None = None
+
+
+@dataclass(frozen=True)
+class TimelineTrack:
+	"""A non-editable track row with segment placements."""
+
+	id: str
+	label: str
+	segments: list[TrackSegment]
+	kind: str | None = None
+
+
+@dataclass(frozen=True)
+class TracksTimelineView:
+	"""Multi-track timeline akin to NLE row layout."""
+
+	tracks: list[TimelineTrack]
+	duration: float | None = None
+	anchors: list[TimelineAnchor] | None = None
+	kind: Literal["tracks_timeline"] = "tracks_timeline"
+
+
+@dataclass(frozen=True)
 class MarkdownView:
-	"""Lightweight markdown text (host-authored; keep payloads small)."""
+	"""Rendered as markdown in the inspector."""
 
 	text: str
 	kind: Literal["markdown"] = "markdown"
@@ -43,20 +78,21 @@ class MarkdownView:
 
 @dataclass(frozen=True)
 class HtmlView:
-	"""Escape hatch: HTML shown in a sandboxed iframe."""
+	"""Rendered as sandboxed iframe ``srcDoc``."""
 
 	html: str
 	kind: Literal["html"] = "html"
 
 
-ViewSpec = Union[TableView, TimelineView, MarkdownView, HtmlView]
+ViewSpec = Union[
+	TableView,
+	TimelineView,
+	TracksTimelineView,
+	MarkdownView,
+	HtmlView,
+]
 
 
-def view_spec_to_dict(view: ViewSpec) -> dict[str, Any]:
-	"""Serialize a ViewSpec for the ``/api/visualize`` response."""
-	payload = asdict(view)
-	if isinstance(view, TimelineView):
-		payload["anchors"] = [
-			{"id": a.id, "t": a.t, "label": a.label} for a in view.anchors
-		]
-	return payload
+def view_spec_to_dict(view: ViewSpec) -> dict:
+	"""Convert dataclass view specs to JSON-safe dict payloads."""
+	return asdict(view)

@@ -1,9 +1,8 @@
-"""Host visualizers: Python callables → declarative ViewSpec for the React UI."""
+"""Public visualizer APIs for Python hosts."""
 
 from __future__ import annotations
 
 from q_glass.visualizers.registry import (
-	RegisteredVisualizer,
 	clear_visualizers,
 	register_visualizer,
 	render_all,
@@ -14,7 +13,10 @@ from q_glass.visualizers.specs import (
 	MarkdownView,
 	TableView,
 	TimelineAnchor,
+	TimelineTrack,
 	TimelineView,
+	TrackSegment,
+	TracksTimelineView,
 	ViewSpec,
 	view_spec_to_dict,
 )
@@ -22,10 +24,12 @@ from q_glass.visualizers.specs import (
 __all__ = [
 	"HtmlView",
 	"MarkdownView",
-	"RegisteredVisualizer",
 	"TableView",
 	"TimelineAnchor",
+	"TimelineTrack",
 	"TimelineView",
+	"TrackSegment",
+	"TracksTimelineView",
 	"ViewSpec",
 	"clear_visualizers",
 	"register_visualizer",
