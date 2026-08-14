@@ -28,7 +28,8 @@ RuntimeAdapter
 
 1. **Set start** on a node (defaults to the graph entry).
 2. Edit that node’s input in the inspector (JSON); **Apply** / blur calls `setStartInput`.
-3. **Start** resets attempts, sets `currentNodeId` to the start node, uses `startInput` for that node’s first attempt, then auto-advances until **stop** or the end of the happy path.
+3. **Start** resets attempts, parks on the start node, then auto-presses **Step next** until **stop**, failure, or the end. The canvas refreshes after each step so the current-node highlight moves. Recording is the same as manual Step.
+4. **Continue** does not reset. It resumes from the parked node (past a stop) and auto-steps until the next stop, failure, or the end. Previous node I/O stays in the session.
 
 Downstream nodes still use fixture `sampleInput` / `sampleOutput` in the demo. Live adapters should map start input to the host’s real workflow/job payload.
 

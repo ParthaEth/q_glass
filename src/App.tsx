@@ -3,6 +3,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { HttpAdapter, shouldUseHttpAdapter } from "./adapters/http";
 import { SimulatedAdapter } from "./adapters/simulated";
 import type { RuntimeAdapter } from "./adapters/types";
+import {
+	autoStepHaltReason,
+	autoStepMaxIterations,
+	canContinue,
+} from "./autoStep";
 import GraphCanvas from "./components/GraphCanvas";
 import NodeInspector from "./components/NodeInspector";
 import Toolbar from "./components/Toolbar";
@@ -127,16 +132,97 @@ export default function App() {
 		[refreshRun],
 	);
 
+	const autoStepFromHere = useCallback(async () => {
+		const maxSteps = autoStepMaxIterations(graph?.nodes.length ?? 0);
+		let guardHit = true;
+		for (let i = 0; i < maxSteps; i++) {
+			const before = await adapter.getRunState(runId);
+			const runningId = before?.currentNodeId ?? null;
+			if (!runningId) {
+				setRun(before);
+				if (before?.message) setHint(before.message);
+				guardHit = false;
+				break;
+			}
+			setBusyNodeId(runningId);
+			setSelectedNodeId(runningId);
+			try {
+				await adapter.step(runId);
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				setHint(msg);
+				await refreshRun({ followCurrent: true });
+				guardHit = false;
+				break;
+			}
+			const state = await adapter.getRunState(runId);
+			setRun(state);
+			if (state?.message) setHint(state.message);
+			if (state?.currentNodeId) {
+				setSelectedNodeId(state.currentNodeId);
+				setBusyNodeId(state.currentNodeId);
+			} else {
+				setBusyNodeId(null);
+			}
+			await new Promise<void>((resolve) => {
+				window.setTimeout(resolve, 80);
+			});
+			if (autoStepHaltReason(state)) {
+				guardHit = false;
+				break;
+			}
+		}
+		if (guardHit) {
+			setHint(
+				`Auto-step stopped after ${maxSteps} steps (loop guard). Use Step next to continue.`,
+			);
+		}
+	}, [graph?.nodes.length, refreshRun, runId]);
+
 	const onStart = useCallback(() => {
-		void runControl(
-			() => adapter.start().then(() => undefined),
-			{
-				...controlOpts,
-				busyNodeId: run?.startNodeId ?? run?.currentNodeId ?? null,
-				followCurrent: true,
-			},
-		);
-	}, [controlOpts, run?.startNodeId, run?.currentNodeId]);
+		void (async () => {
+			setBusy(true);
+			try {
+				const startId = run?.startNodeId;
+				if (startId && adapter.setStart) {
+					await adapter.setStart(runId, startId);
+					await refreshRun({ followCurrent: true });
+				}
+				await autoStepFromHere();
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				setHint(msg);
+				try {
+					await refreshRun({ followCurrent: true });
+				} catch {
+					// ignore secondary refresh failure
+				}
+			} finally {
+				setBusy(false);
+				setBusyNodeId(null);
+			}
+		})();
+	}, [autoStepFromHere, refreshRun, run?.startNodeId, runId]);
+
+	const onContinue = useCallback(() => {
+		void (async () => {
+			setBusy(true);
+			try {
+				await autoStepFromHere();
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				setHint(msg);
+				try {
+					await refreshRun({ followCurrent: true });
+				} catch {
+					// ignore secondary refresh failure
+				}
+			} finally {
+				setBusy(false);
+				setBusyNodeId(null);
+			}
+		})();
+	}, [autoStepFromHere, refreshRun]);
 
 	const onSetStart = useCallback(() => {
 		if (!selectedNodeId) {
@@ -216,6 +302,8 @@ export default function App() {
 				stopAfter={run?.stopAfter ?? null}
 				hint={hint}
 				onStart={onStart}
+				onContinue={onContinue}
+				canContinue={canContinue(run)}
 				onSetStart={onSetStart}
 				onClearStart={onClearStart}
 				onSetStop={onSetStop}

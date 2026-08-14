@@ -21,8 +21,8 @@ which starts the hello API on **http://127.0.0.1:8787** and Vite on
 
 `http://127.0.0.1:5173/?adapter=http&api=http://127.0.0.1:8787`
 
-Handlers are real Python callables — edit the start `query`, click **Start**,
-and inspect transformed outputs.
+Handlers are real Python callables — edit the start `query`, click **Start**
+(auto-steps so the highlight moves), and inspect each node’s I/O.
 
 CLI-only:
 

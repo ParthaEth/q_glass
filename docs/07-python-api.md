@@ -65,7 +65,7 @@ result = run_from(
 ```
 
 - **`run_node`** — invoke one handler (decisions return input unchanged).
-- **`run_from`** — walk the happy path, record per-node attempts, stop after completing `stop_after` if set.
+- **`run_from`** — walk the happy path, record per-node attempts, stop after completing `stop_after` if set. Used by the CLI and `POST /api/session/start`. The dashboard Start button does not call this; it loops Step so each node’s I/O is visible as the run proceeds.
 - Decisions: if payload `decision_yes` is set, that boolean selects **Yes**/**No**;
   otherwise legacy fallback — non-empty `issues` → **Yes**, else **No**.
 
@@ -87,7 +87,7 @@ Stdlib HTTP control plane (CORS enabled for Vite):
 |----------|------|
 | `GET /api/graph` | Internal UI dict |
 | `GET /api/session` | Run state |
-| `POST /api/session/start` | Run from session start/stop |
+| `POST /api/session/start` | Batch `run_from` (CLI / API). The dashboard **Start** button auto-steps via `POST /api/session/step` instead so the highlight can move. |
 | `POST /api/session/set_start` | `{ "nodeId" }` |
 | `POST /api/session/set_stop` | `{ "nodeId" }` |
 | `POST /api/session/set_start_input` | `{ "input": {…} }` |

@@ -37,8 +37,9 @@ python -m q_glass.examples.hello run --query "Summarize the weekly report"
 2. **Set start** — chip `start: …` marks where the run begins (default = graph entry).
 3. With the start node selected, edit **Input** JSON in the right panel → **Apply input**.
 4. Optionally **Set stop** on a later node.
-5. **Start** — runs Python handlers from the start node until stop or the end.
-6. **Step next** advances one stage (or resumes past a stop).
+5. **Start** — auto-steps Python handlers from the start node (highlight moves) until stop, failure, or the end.
+6. **Continue** — resumes from a stop (or the current node) without resetting; auto-steps until the next stop, failure, or the end.
+7. **Step next** advances one stage (or resumes past a stop).
 
 Source: [`../python/q_glass/examples/hello.py`](../python/q_glass/examples/hello.py).
 Docs: [07-python-api](../docs/07-python-api.md).

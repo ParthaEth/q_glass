@@ -7,6 +7,8 @@ type Props = {
 	stopAfter: string | null;
 	hint: string | null;
 	onStart: () => void;
+	onContinue: () => void;
+	canContinue?: boolean;
 	onSetStart: () => void;
 	onClearStart: () => void;
 	onSetStop: () => void;
@@ -23,6 +25,8 @@ export default function Toolbar({
 	stopAfter,
 	hint,
 	onStart,
+	onContinue,
+	canContinue = false,
 	onSetStart,
 	onClearStart,
 	onSetStop,
@@ -49,8 +53,21 @@ export default function Toolbar({
 						stop: {stopAfter}
 					</span>
 				) : null}
-				<button type="button" disabled={disabled} onClick={onStart}>
+				<button
+					type="button"
+					disabled={disabled}
+					title="Reset to start, then auto-step until stop, failure, or the end"
+					onClick={onStart}
+				>
 					Start
+				</button>
+				<button
+					type="button"
+					disabled={disabled || !canContinue}
+					title="Resume from the current node (past a stop) and auto-step until the next stop, failure, or the end"
+					onClick={onContinue}
+				>
+					Continue
 				</button>
 				<button type="button" disabled={disabled} onClick={onSetStart}>
 					Set start
