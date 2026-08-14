@@ -198,6 +198,26 @@ class RuntimeSession:
 	def get_state(self) -> dict[str, Any]:
 		return self.session.to_ui_dict(self.graph)
 
+	def io_payload(self, node_id: str, side: str) -> Any:
+		"""Last recorded I/O for ``node_id``, else start/sample payload.
+
+		The dashboard calls this from ``POST /api/visualize`` so the browser
+		does not have to round-trip huge stage payloads on every node click.
+		"""
+		if side not in ("in", "out"):
+			raise ValueError("side must be 'in' or 'out'")
+		attempts = self.session.node_attempts.get(node_id, [])
+		if attempts:
+			last = attempts[-1]
+			return last.input if side == "in" else last.output
+		start_id = self.session.start_node_id or self.graph.entry_node_id()
+		if side == "in" and node_id == start_id:
+			return self.session.start_input
+		node = self.graph.nodes.get(node_id)
+		if node is None:
+			return None
+		return node.sample_input if side == "in" else node.sample_output
+
 	def set_start(self, node_id: str) -> None:
 		if node_id not in self.graph.nodes:
 			self.session.message = f'Unknown start stage "{node_id}"'

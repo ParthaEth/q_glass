@@ -107,6 +107,13 @@ body,
 	background: #ebe6df;
 }
 
+/* Edges are decoration only — never steal node clicks after a full run. */
+.qg-canvas .react-flow__edge,
+.qg-canvas .react-flow__edgelabel-renderer,
+.qg-canvas .react-flow__connection {
+	pointer-events: none !important;
+}
+
 .qg-inspector {
 	overflow: auto;
 	padding: 1rem;

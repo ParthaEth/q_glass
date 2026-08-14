@@ -81,13 +81,12 @@ export class HttpAdapter implements RuntimeAdapter {
 		stageId: string;
 		nodeId: string;
 		side: "in" | "out";
-		value: unknown;
+		value?: unknown;
 	}): Promise<VisualizerResult[]> {
 		const res = await postJson<VisualizeResponse>("/api/visualize", {
 			stageId: args.stageId,
 			nodeId: args.nodeId,
 			side: args.side,
-			value: args.value,
 		});
 		return res.visualizers ?? [];
 	}

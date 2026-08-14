@@ -27,7 +27,7 @@ type Props = {
 			stageId: string;
 			nodeId: string;
 			side: "in" | "out";
-			value: unknown;
+			value?: unknown;
 		},
 	) => Promise<VisualizerResult[]>;
 } & (JsonEditable | JsonReadonly);
@@ -48,28 +48,32 @@ export default function IoPane(props: Props) {
 		let cancelled = false;
 		setLoading(true);
 		setError(null);
-		void visualize({ stageId, nodeId, side, value })
-			.then((next) => {
-				if (cancelled) return;
-				setViews(next);
-				setTab((prev) => {
-					if (prev === "json") return prev;
-					if (next.some((v) => v.id === prev)) return prev;
-					return "json";
+		const timer = window.setTimeout(() => {
+			if (cancelled) return;
+			void visualize({ stageId, nodeId, side })
+				.then((next) => {
+					if (cancelled) return;
+					setViews(next);
+					setTab((prev) => {
+						if (prev === "json") return prev;
+						if (next.some((v) => v.id === prev)) return prev;
+						return "json";
+					});
+				})
+				.catch((err: unknown) => {
+					if (cancelled) return;
+					setViews([]);
+					setError(err instanceof Error ? err.message : String(err));
+				})
+				.finally(() => {
+					if (!cancelled) setLoading(false);
 				});
-			})
-			.catch((err: unknown) => {
-				if (cancelled) return;
-				setViews([]);
-				setError(err instanceof Error ? err.message : String(err));
-			})
-			.finally(() => {
-				if (!cancelled) setLoading(false);
-			});
+		}, 180);
 		return () => {
 			cancelled = true;
+			window.clearTimeout(timer);
 		};
-	}, [visualize, stageId, nodeId, side, value]);
+	}, [visualize, stageId, nodeId, side]);
 
 	const jsonBlock: ReactNode =
 		props.editable === true ? (

@@ -22,7 +22,7 @@ export interface RuntimeAdapter {
 		stageId: string;
 		nodeId: string;
 		side: "in" | "out";
-		value: unknown;
+		value?: unknown;
 	}): Promise<VisualizerResult[]>;
 }
 

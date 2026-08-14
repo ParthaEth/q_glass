@@ -238,10 +238,16 @@ def serve(
 					side = body.get("side", "out")
 					if side not in ("in", "out"):
 						raise ValueError("side must be 'in' or 'out'")
+					node_id = str(body.get("nodeId") or stage_id)
+					value = (
+						body["value"]
+						if "value" in body
+						else runtime.io_payload(node_id, side)
+					)
 					visualizers = render_all(
 						str(stage_id),
 						side,  # type: ignore[arg-type]
-						body.get("value"),
+						value,
 					)
 					_send_json(self, 200, {"visualizers": visualizers})
 					return

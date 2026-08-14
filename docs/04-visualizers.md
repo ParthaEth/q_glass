@@ -62,10 +62,13 @@ swallowed so one bad host view cannot break the inspector.
 {
   "stageId": "draft_plan",
   "nodeId": "draft_plan",
-  "side": "out",
-  "value": { "...": "payload" }
+  "side": "out"
 }
 ```
+
+`value` is optional. When omitted, the server reads the session’s last attempt
+for that node (or the start/sample payload). The dashboard omits `value` so a
+node click does not round-trip a huge payload.
 
 Response:
 

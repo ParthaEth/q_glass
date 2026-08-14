@@ -92,3 +92,30 @@ def test_clear_start_resets_cursor_to_entry() -> None:
 	state = session.get_state()
 	assert state["startNodeId"] == "a"
 	assert state["currentNodeId"] == "a"
+
+
+def test_io_payload_uses_last_attempt() -> None:
+	graph = _linear_graph()
+	session = RuntimeSession(graph)
+	session.step()
+	assert session.io_payload("a", "in")["brief"]["prompt_text"] == "hi"
+	assert session.io_payload("a", "out")["stage"] == "a"
+	assert session.io_payload("c", "out") is None
+
+
+def test_io_payload_falls_back_to_start_input_before_run() -> None:
+	graph = _linear_graph()
+	session = RuntimeSession(graph)
+	session.set_start_input({"brief": {"prompt_text": "edited"}})
+	assert session.io_payload("a", "in")["brief"]["prompt_text"] == "edited"
+
+
+def test_io_payload_rejects_bad_side() -> None:
+	graph = _linear_graph()
+	session = RuntimeSession(graph)
+	try:
+		session.io_payload("a", "both")
+	except ValueError as exc:
+		assert "side" in str(exc)
+	else:
+		raise AssertionError("expected ValueError")

@@ -43,8 +43,10 @@ More detail: [docs/07-python-api.md](docs/07-python-api.md),
 
 ## Dashboard controls
 
-The canvas highlight is the execution cursor. Each completed (or failed) node
-keeps its last attempt’s **input / output** in the inspector. Toolbar actions:
+The canvas highlight is the execution cursor. Click any completed (or failed)
+node to inspect its last attempt’s **input / output**. After a full run the
+inspector shows a short JSON prefix so the graph stays clickable; hit **Expand**
+for the full payload. Toolbar actions:
 
 | Button | What it does |
 |--------|----------------|

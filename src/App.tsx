@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import { HttpAdapter, shouldUseHttpAdapter } from "./adapters/http";
 import { SimulatedAdapter } from "./adapters/simulated";
@@ -65,7 +65,7 @@ export default function App() {
 			stageId: string;
 			nodeId: string;
 			side: "in" | "out";
-			value: unknown;
+			value?: unknown;
 		}) => {
 			if (!adapter.visualize) {
 				return Promise.resolve([]);
@@ -96,10 +96,12 @@ export default function App() {
 		})();
 	}, [refreshRun]);
 
+	const deferredSelectedId = useDeferredValue(selectedNodeId);
+	const inspectorNodeId = selectedNodeId === null ? null : deferredSelectedId;
 	const selectedNode = useMemo(() => {
-		if (!graph || !selectedNodeId) return null;
-		return graph.nodes.find((n) => n.id === selectedNodeId) ?? null;
-	}, [graph, selectedNodeId]);
+		if (!graph || !inspectorNodeId) return null;
+		return graph.nodes.find((n) => n.id === inspectorNodeId) ?? null;
+	}, [graph, inspectorNodeId]);
 
 	const completedIds = useMemo(() => {
 		if (!run) return new Set<string>();
@@ -325,7 +327,7 @@ export default function App() {
 				<NodeInspector
 					node={selectedNode}
 					run={run}
-					selectedNodeId={selectedNodeId}
+					selectedNodeId={inspectorNodeId}
 					onStartInputChange={onStartInputChange}
 					visualize={adapter.visualize ? visualize : undefined}
 				/>

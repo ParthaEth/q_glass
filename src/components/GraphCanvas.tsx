@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type MouseEvent } from "react";
+import { useCallback, useMemo, useRef, type MouseEvent } from "react";
 import {
 	Background,
 	Controls,
@@ -10,6 +10,7 @@ import {
 	type Edge,
 	type Node,
 	type NodeTypes,
+	type ReactFlowInstance,
 	type ReactFlowState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -115,7 +116,7 @@ function groupFrameNode(
 		type: "groupFrame",
 		position: { x, y },
 		data: { label: group.label },
-		style: { width, height },
+		style: { width, height, pointerEvents: "none" },
 		draggable: false,
 		selectable: false,
 		focusable: false,
@@ -150,6 +151,7 @@ function GraphCanvasInner({
 					id: n.id,
 					type: "stage",
 					position: n.position ?? { x: 0, y: 0 },
+					className: "nopan nodrag",
 					data: {
 						label: n.label,
 						kind: n.kind,
@@ -160,7 +162,7 @@ function GraphCanvasInner({
 						isStop: n.id === stopAfterNodeId,
 					},
 					selected: n.id === selectedNodeId,
-					zIndex: 1,
+					zIndex: n.id === selectedNodeId ? 4 : 2,
 				};
 			}),
 		[
@@ -200,11 +202,12 @@ function GraphCanvasInner({
 				// Short Yes that continues down the spine (Has spans? → choose)
 				// leaves the diamond bottom; side-branch Yes stays on the right.
 				const yesDown = yes && !cycle && dy > 40 && dx < 120;
-				// Yes → right; leftSkip → left corridor; short No → bottom;
-				// cycle Yes → right corridor into activity `loop` handle.
+				// Cycle arms (Yes or No) use the right corridor into `loop`
+				// so they stay off the spine. Yes → right; leftSkip → left;
+				// short No → bottom; short Yes down the spine → bottom.
 				let sourceHandle: string | undefined;
 				let targetHandle: string | undefined;
-				if (cycle && yes) {
+				if (cycle) {
 					sourceHandle = "yes";
 					targetHandle = "loop";
 				} else if (yesDown) {
@@ -231,9 +234,10 @@ function GraphCanvasInner({
 							? { borderRadius: 16, offset: 28 }
 							: { borderRadius: 12 },
 					animated: cycle || e.target === currentNodeId,
+					interactionWidth: 0,
 					style: cycle
-						? { stroke: "#c45c26", strokeDasharray: "6 4" }
-						: undefined,
+						? { stroke: "#c45c26", strokeDasharray: "6 4", pointerEvents: "none" }
+						: { pointerEvents: "none" },
 					markerEnd: { type: MarkerType.ArrowClosed },
 					zIndex: 0,
 				};
@@ -241,27 +245,54 @@ function GraphCanvasInner({
 		[graph.edges, graph.nodes, currentNodeId],
 	);
 
-	const onNodeClick = useCallback(
-		(_: MouseEvent, node: Node) => {
+	const ignoreNextPaneClick = useRef(false);
+
+	const selectStageNode = useCallback(
+		(node: Node) => {
 			if (String(node.id).startsWith("__group__")) return;
+			ignoreNextPaneClick.current = true;
 			onSelectNode(node.id);
+			window.setTimeout(() => {
+				ignoreNextPaneClick.current = false;
+			}, 200);
 		},
 		[onSelectNode],
 	);
 
+	const onNodeClick = useCallback(
+		(_: MouseEvent, node: Node) => {
+			selectStageNode(node);
+		},
+		[selectStageNode],
+	);
+
 	const onPaneClick = useCallback(() => {
+		if (ignoreNextPaneClick.current) {
+			ignoreNextPaneClick.current = false;
+			return;
+		}
 		onSelectNode(null);
 	}, [onSelectNode]);
+
+	const onInit = useCallback((instance: ReactFlowInstance) => {
+		void instance.fitView({ padding: 0.15 });
+	}, []);
 
 	return (
 		<ReactFlow
 			nodes={nodes}
 			edges={edges}
 			nodeTypes={nodeTypes}
+			onInit={onInit}
 			onNodeClick={onNodeClick}
 			onPaneClick={onPaneClick}
-			fitView
-			fitViewOptions={{ padding: 0.15 }}
+			nodesDraggable={false}
+			nodesConnectable={false}
+			elementsSelectable
+			edgesFocusable={false}
+			edgesReconnectable={false}
+			selectNodesOnDrag={false}
+			nodeDragThreshold={0}
 			minZoom={0.2}
 			proOptions={{ hideAttribution: true }}
 		>
