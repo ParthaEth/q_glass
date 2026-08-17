@@ -202,12 +202,12 @@ function GraphCanvasInner({
 				// Short Yes that continues down the spine (Has spans? → choose)
 				// leaves the diamond bottom; side-branch Yes stays on the right.
 				const yesDown = yes && !cycle && dy > 40 && dx < 120;
-				// Cycle arms (Yes or No) use the right corridor into `loop`
-				// so they stay off the spine. Yes → right; leftSkip → left;
-				// short No → bottom; short Yes down the spine → bottom.
+				// Diamond cycles use the right corridor into `loop`.
+				// Activity cycles use default bottom → top so the back-edge
+				// reads as a normal flowchart loop.
 				let sourceHandle: string | undefined;
 				let targetHandle: string | undefined;
-				if (cycle) {
+				if (cycle && src?.kind === "decision") {
 					sourceHandle = "yes";
 					targetHandle = "loop";
 				} else if (yesDown) {
@@ -227,10 +227,10 @@ function GraphCanvasInner({
 					sourceHandle,
 					targetHandle,
 					label: e.label,
-					type: cycle || yes || no ? "smoothstep" : "default",
+					type: (cycle && src?.kind === "decision") || yes || no ? "smoothstep" : "default",
 					pathOptions: leftSkip
 						? { borderRadius: 20, offset: 96 }
-						: cycle
+						: cycle && src?.kind === "decision"
 							? { borderRadius: 16, offset: 28 }
 							: { borderRadius: 12 },
 					animated: cycle || e.target === currentNodeId,
