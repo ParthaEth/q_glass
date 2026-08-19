@@ -226,22 +226,27 @@ class RuntimeSession:
 		self.session.start_node_id = node_id
 		if not same:
 			self.session.start_input = _default_sample(self.graph, node_id)
+			# Only wipe attempts when the start node changes — keeps the graph
+			# fully drawn when the user just clicks Start again on the same node.
+			self.session.node_attempts = {}
+			self._cursor_payload = None
 		# Park the execution cursor at start so Step does not keep walking from
 		# the graph entry (or a previous mid-run node).
 		self.session.current_node_id = node_id
-		self.session.node_attempts = {}
-		self._cursor_payload = None
 		self.session.message = (
 			f'Start set at "{node_id}". Edit input, then Start or Step next.'
 		)
 
 	def clear_start(self) -> None:
 		entry = self.graph.entry_node_id()
+		prev = self.session.start_node_id
 		self.session.start_node_id = entry
 		self.session.start_input = _default_sample(self.graph, entry)
 		self.session.current_node_id = entry
-		self.session.node_attempts = {}
-		self._cursor_payload = None
+		if prev != entry:
+			# Only wipe attempts when the start node actually changes.
+			self.session.node_attempts = {}
+			self._cursor_payload = None
 		self.session.message = f'Start cleared → entry "{entry}".'
 
 	def set_stop(self, node_id: str) -> None:
@@ -261,6 +266,9 @@ class RuntimeSession:
 			return
 		self.session.start_input = deepcopy(value)
 		sid = self.session.start_node_id or self.graph.entry_node_id()
+		# Keep existing node_attempts visible (greyed-out stale state) so the
+		# graph stays fully drawn while the user edits input. They are cleared
+		# when start() or step() actually begins the new run.
 		self.session.message = f'Start input updated for "{sid}". Click Start to run.'
 
 	def start(self, start_input: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -330,14 +338,12 @@ class RuntimeSession:
 				sess.start_input or _default_sample(graph, cur)
 			)
 			sess.current_node_id = cur
+			# Keep all previous attempts visible (stale) so the whole graph
+			# stays drawn. Each node's attempts are replaced when it re-runs.
+			# Only drop the start node's prior attempts so it shows as "next"
+			# rather than "completed" at the beginning of a fresh run.
 			if not sess.node_attempts.get(cur):
-				# Keep failed attempts on the start node for retry visibility;
-				# drop attempts from other nodes left over before set_start.
-				sess.node_attempts = {
-					nid: attempts
-					for nid, attempts in sess.node_attempts.items()
-					if nid == cur
-				}
+				sess.node_attempts.pop(cur, None)
 
 		assert cur is not None
 		payload = deepcopy(self._cursor_payload or {})
