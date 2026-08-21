@@ -185,11 +185,9 @@ export default function App() {
 		void (async () => {
 			setBusy(true);
 			try {
-				const startId = run?.startNodeId;
-				if (startId && adapter.setStart) {
-					await adapter.setStart(runId, startId);
-					await refreshRun({ followCurrent: true });
-				}
+				// The start node is already selected by Set start (or the graph
+				// entry). Re-setting it here would reset the user-edited start
+				// input to its sample value immediately before execution.
 				await autoStepFromHere();
 			} catch (err: unknown) {
 				const msg = err instanceof Error ? err.message : String(err);
@@ -204,7 +202,7 @@ export default function App() {
 				setBusyNodeId(null);
 			}
 		})();
-	}, [autoStepFromHere, refreshRun, run?.startNodeId, runId]);
+	}, [autoStepFromHere, refreshRun]);
 
 	const onContinue = useCallback(() => {
 		void (async () => {

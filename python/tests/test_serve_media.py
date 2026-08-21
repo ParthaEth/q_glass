@@ -4,7 +4,27 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from q_glass.serve import _MediaStore, _prepare_media_views
+from q_glass.serve import _MediaStore, _prepare_media_views, _send_media
+
+
+class _DisconnectingBuffer:
+	def write(self, _chunk: bytes) -> int:
+		raise BrokenPipeError("browser closed the media request")
+
+
+class _DisconnectingHandler:
+	def __init__(self) -> None:
+		self.headers: dict[str, str] = {}
+		self.wfile = _DisconnectingBuffer()
+
+	def send_response(self, _status: int) -> None:
+		return
+
+	def send_header(self, _name: str, _value: str) -> None:
+		return
+
+	def end_headers(self) -> None:
+		return
 
 
 class TestMediaStore:
@@ -40,3 +60,8 @@ class TestMediaStore:
 			_MediaStore(),
 		)
 		assert prepared[0]["view"]["source"] == "https://example.test/preview.mp4"
+
+	def test_browser_disconnect_while_streaming_media_is_silent(self, tmp_path: Path) -> None:
+		mp4 = tmp_path / "preview.mp4"
+		mp4.write_bytes(b"video")
+		_send_media(_DisconnectingHandler(), mp4)

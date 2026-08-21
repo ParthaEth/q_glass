@@ -18,6 +18,8 @@ from q_glass.graph import Graph
 from q_glass.runtime import RuntimeSession
 from q_glass.visualizers import render_all
 
+_CLIENT_DISCONNECT_ERRORS = (BrokenPipeError, ConnectionResetError)
+
 
 def find_ui_root() -> Path | None:
 	"""Locate the q_glass frontend root (directory with package.json + src/App.tsx)."""
@@ -128,12 +130,17 @@ def _read_json(handler: BaseHTTPRequestHandler) -> dict[str, Any]:
 
 def _send_json(handler: BaseHTTPRequestHandler, code: int, payload: Any) -> None:
 	body = json.dumps(payload).encode("utf-8")
-	handler.send_response(code)
-	_cors(handler)
-	handler.send_header("Content-Type", "application/json")
-	handler.send_header("Content-Length", str(len(body)))
-	handler.end_headers()
-	handler.wfile.write(body)
+	try:
+		handler.send_response(code)
+		_cors(handler)
+		handler.send_header("Content-Type", "application/json")
+		handler.send_header("Content-Length", str(len(body)))
+		handler.end_headers()
+		handler.wfile.write(body)
+	except _CLIENT_DISCONNECT_ERRORS:
+		# Browsers routinely abandon requests while changing video ranges or
+		# unmounting an inspector. There is no peer left to report an error to.
+		return
 
 
 class _MediaStore:
@@ -253,7 +260,10 @@ def _send_media(
 			chunk = media.read(min(64 * 1024, remaining))
 			if not chunk:
 				break
-			handler.wfile.write(chunk)
+			try:
+				handler.wfile.write(chunk)
+			except _CLIENT_DISCONNECT_ERRORS:
+				return
 			remaining -= len(chunk)
 
 
@@ -315,6 +325,8 @@ def serve(
 					_send_json(self, 200, {"ok": True, "graphId": graph.id})
 					return
 				_send_json(self, 404, {"error": f"not found: {path}"})
+			except _CLIENT_DISCONNECT_ERRORS:
+				return
 			except Exception as exc:  # noqa: BLE001
 				_send_json(self, 500, {"error": str(exc)})
 
@@ -330,6 +342,8 @@ def serve(
 				return
 			try:
 				_send_media(self, media_path, head_only=True)
+			except _CLIENT_DISCONNECT_ERRORS:
+				return
 			except Exception as exc:  # noqa: BLE001
 				_send_json(self, 500, {"error": str(exc)})
 
@@ -400,6 +414,8 @@ def serve(
 					_send_json(self, 200, {"visualizers": visualizers})
 					return
 				_send_json(self, 404, {"error": f"not found: {path}"})
+			except _CLIENT_DISCONNECT_ERRORS:
+				return
 			except Exception as exc:  # noqa: BLE001
 				_send_json(self, 500, {"error": str(exc)})
 
