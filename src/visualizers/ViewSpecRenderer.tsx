@@ -1,5 +1,6 @@
 import type { ViewSpec } from "./types";
 import { apiBase } from "../adapters/http";
+import HtmlView from "./HtmlView";
 import TracksTimelineView from "./TracksTimelineView";
 import TimelineView from "./TimelineView";
 
@@ -87,14 +88,7 @@ export default function ViewSpecRenderer({ view }: Props) {
 	}
 
 	if (view.kind === "html") {
-		return (
-			<iframe
-				className="qg-viz qg-viz--html"
-				title="Host HTML visualizer"
-				sandbox=""
-				srcDoc={view.html}
-			/>
-		);
+		return <HtmlView view={view} />;
 	}
 
 	if (view.kind === "video") {
