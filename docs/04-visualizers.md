@@ -53,6 +53,7 @@ swallowed so one bad host view cannot break the inspector.
 | `timeline` | `anchors[{id,t,label}]`, optional `duration` | Anchor list + rail |
 | `markdown` | `text` | Small markdown subset |
 | `html` | `html` | Sandboxed iframe |
+| `video` | `source`, optional `label` | Native video player |
 
 ### Wire protocol
 
@@ -88,6 +89,9 @@ API) stays JSON-only.
 1. Core ships **no** domain visualizers (hello demo only).
 2. Unknown stages always degrade to JSON.
 3. Plugins must tolerate partial / missing payloads.
+4. A `VideoView` may name an HTTP(S) URL or an existing local file. The Python
+   host maps local files to opaque `/api/media/...` URLs only for that running
+   q-glass server; the browser never receives a filesystem path.
 
 Related: [02-graph-schema.md](./02-graph-schema.md),
 [05-trace-dumps.md](./05-trace-dumps.md), [07-python-api.md](./07-python-api.md).

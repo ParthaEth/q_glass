@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import atexit
 import json
+import mimetypes
 import os
+import secrets
 import shutil
 import signal
 import subprocess
@@ -10,7 +12,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from q_glass.graph import Graph
 from q_glass.runtime import RuntimeSession
@@ -134,6 +136,127 @@ def _send_json(handler: BaseHTTPRequestHandler, code: int, payload: Any) -> None
 	handler.wfile.write(body)
 
 
+class _MediaStore:
+	"""Expose visualizer-selected local media through opaque, in-memory tokens."""
+
+	def __init__(self) -> None:
+		self._paths_by_token: dict[str, Path] = {}
+		self._tokens_by_path: dict[Path, str] = {}
+
+	def register(self, source: str) -> str | None:
+		"""Return a q-glass media URL for an existing local file, if safe to serve."""
+		parsed = urlparse(source)
+		if parsed.scheme in {"http", "https", "data", "blob"}:
+			return source
+		if parsed.scheme == "file":
+			candidate = Path(unquote(parsed.path))
+		elif not parsed.scheme:
+			candidate = Path(source)
+		else:
+			return None
+		try:
+			path = candidate.resolve(strict=True)
+		except OSError:
+			return None
+		if not path.is_file():
+			return None
+		token = self._tokens_by_path.get(path)
+		if token is None:
+			token = secrets.token_urlsafe(18)
+			self._tokens_by_path[path] = token
+			self._paths_by_token[token] = path
+		return f"/api/media/{token}"
+
+	def resolve(self, token: str) -> Path | None:
+		"""Return the still-existing file selected by a prior visualizer response."""
+		path = self._paths_by_token.get(token)
+		return path if path is not None and path.is_file() else None
+
+
+def _prepare_media_views(
+	visualizers: list[dict[str, Any]],
+	media_store: _MediaStore,
+) -> list[dict[str, Any]]:
+	"""Replace local ``VideoView`` sources with q-glass media endpoint URLs."""
+	prepared: list[dict[str, Any]] = []
+	for item in visualizers:
+		entry = dict(item)
+		view_raw = entry.get("view")
+		if not isinstance(view_raw, dict) or view_raw.get("kind") != "video":
+			prepared.append(entry)
+			continue
+		view = dict(view_raw)
+		source = view.get("source")
+		if not isinstance(source, str) or not source.strip():
+			continue
+		served_source = media_store.register(source)
+		if served_source is None:
+			continue
+		view["source"] = served_source
+		entry["view"] = view
+		prepared.append(entry)
+	return prepared
+
+
+def _send_media(
+	handler: BaseHTTPRequestHandler,
+	path: Path,
+	*,
+	head_only: bool = False,
+) -> None:
+	"""Stream an MP4/media file with single-range support for browser seeking."""
+	size = path.stat().st_size
+	content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+	start = 0
+	end = max(size - 1, 0)
+	status = 200
+	range_header = handler.headers.get("Range")
+	if range_header:
+		try:
+			unit, raw_range = range_header.split("=", 1)
+			start_raw, end_raw = raw_range.split(",", 1)[0].strip().split("-", 1)
+			if unit.strip() != "bytes":
+				raise ValueError("unsupported range unit")
+			if not start_raw:
+				length = int(end_raw)
+				if length <= 0:
+					raise ValueError("invalid suffix range")
+				start = max(size - length, 0)
+			else:
+				start = int(start_raw)
+				end = int(end_raw) if end_raw else end
+			if start < 0 or start >= size or end < start:
+				raise ValueError("range outside media")
+			end = min(end, size - 1)
+			status = 206
+		except (TypeError, ValueError):
+			handler.send_response(416)
+			_cors(handler)
+			handler.send_header("Content-Range", f"bytes */{size}")
+			handler.end_headers()
+			return
+	length = end - start + 1 if size else 0
+	handler.send_response(status)
+	_cors(handler)
+	handler.send_header("Content-Type", content_type)
+	handler.send_header("Accept-Ranges", "bytes")
+	handler.send_header("Content-Length", str(length))
+	if status == 206:
+		handler.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+	handler.end_headers()
+	if head_only or not length:
+		return
+	with path.open("rb") as media:
+		media.seek(start)
+		remaining = length
+		while remaining:
+			chunk = media.read(min(64 * 1024, remaining))
+			if not chunk:
+				break
+			handler.wfile.write(chunk)
+			remaining -= len(chunk)
+
+
 def serve(
 	graph: Graph,
 	*,
@@ -152,6 +275,7 @@ def serve(
 	use the printed ``?adapter=http`` URL (not the bare :5173 link).
 	"""
 	runtime = RuntimeSession(graph)
+	media_store = _MediaStore()
 	ui_proc: subprocess.Popen[Any] | None = None
 	url = dashboard_url(
 		api_host=host, api_port=port, ui_host=ui_host, ui_port=ui_port
@@ -173,6 +297,14 @@ def serve(
 		def do_GET(self) -> None:  # noqa: N802
 			path = urlparse(self.path).path
 			try:
+				if path.startswith("/api/media/"):
+					token = path.removeprefix("/api/media/")
+					media_path = media_store.resolve(token)
+					if media_path is None:
+						_send_json(self, 404, {"error": "media not found"})
+						return
+					_send_media(self, media_path)
+					return
 				if path in ("/api/graph", "/graph"):
 					_send_json(self, 200, graph.to_ui_dict())
 					return
@@ -183,6 +315,21 @@ def serve(
 					_send_json(self, 200, {"ok": True, "graphId": graph.id})
 					return
 				_send_json(self, 404, {"error": f"not found: {path}"})
+			except Exception as exc:  # noqa: BLE001
+				_send_json(self, 500, {"error": str(exc)})
+
+		def do_HEAD(self) -> None:  # noqa: N802
+			path = urlparse(self.path).path
+			if not path.startswith("/api/media/"):
+				_send_json(self, 404, {"error": f"not found: {path}"})
+				return
+			token = path.removeprefix("/api/media/")
+			media_path = media_store.resolve(token)
+			if media_path is None:
+				_send_json(self, 404, {"error": "media not found"})
+				return
+			try:
+				_send_media(self, media_path, head_only=True)
 			except Exception as exc:  # noqa: BLE001
 				_send_json(self, 500, {"error": str(exc)})
 
@@ -249,6 +396,7 @@ def serve(
 						side,  # type: ignore[arg-type]
 						value,
 					)
+					visualizers = _prepare_media_views(visualizers, media_store)
 					_send_json(self, 200, {"visualizers": visualizers})
 					return
 				_send_json(self, 404, {"error": f"not found: {path}"})

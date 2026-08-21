@@ -84,12 +84,26 @@ class HtmlView:
 	kind: Literal["html"] = "html"
 
 
+@dataclass(frozen=True)
+class VideoView:
+	"""Video player backed by an HTTPS URL or a host-local media path.
+
+	``serve()`` replaces an existing local path with an opaque media endpoint
+	before it reaches the browser. HTTP(S) URLs are rendered directly.
+	"""
+
+	source: str
+	label: str | None = None
+	kind: Literal["video"] = "video"
+
+
 ViewSpec = Union[
 	TableView,
 	TimelineView,
 	TracksTimelineView,
 	MarkdownView,
 	HtmlView,
+	VideoView,
 ]
 
 

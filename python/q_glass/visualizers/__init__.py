@@ -17,6 +17,7 @@ from q_glass.visualizers.specs import (
 	TimelineView,
 	TrackSegment,
 	TracksTimelineView,
+	VideoView,
 	ViewSpec,
 	view_spec_to_dict,
 )
@@ -30,6 +31,7 @@ __all__ = [
 	"TimelineView",
 	"TrackSegment",
 	"TracksTimelineView",
+	"VideoView",
 	"ViewSpec",
 	"clear_visualizers",
 	"register_visualizer",

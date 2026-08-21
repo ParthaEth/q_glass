@@ -56,12 +56,20 @@ export type HtmlViewSpec = {
 	html: string;
 };
 
+export type VideoViewSpec = {
+	kind: "video";
+	/** An HTTP(S) URL or a q_glass `/api/media/<token>` path. */
+	source: string;
+	label?: string | null;
+};
+
 export type ViewSpec =
 	| TableViewSpec
 	| TimelineViewSpec
 	| TracksTimelineViewSpec
 	| MarkdownViewSpec
-	| HtmlViewSpec;
+	| HtmlViewSpec
+	| VideoViewSpec;
 
 export type VisualizerResult = {
 	id: string;

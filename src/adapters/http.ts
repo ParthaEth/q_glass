@@ -2,7 +2,7 @@ import type { GraphDefinition, RunState } from "../types/graph";
 import type { VisualizeResponse, VisualizerResult } from "../visualizers/types";
 import type { RuntimeAdapter } from "./types";
 
-function apiBase(): string {
+export function apiBase(): string {
 	if (typeof window === "undefined") return "http://127.0.0.1:8787";
 	const q = new URLSearchParams(window.location.search);
 	return (

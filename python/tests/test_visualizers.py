@@ -16,6 +16,7 @@ from q_glass.visualizers import (
 	TimelineView,
 	TrackSegment,
 	TracksTimelineView,
+	VideoView,
 	clear_visualizers,
 	register_visualizer,
 	render_all,
@@ -80,6 +81,14 @@ class TestViewSpecSerialization:
 		assert payload["kind"] == "tracks_timeline"
 		assert payload["tracks"][0]["segments"][0]["resource_id"] == "asset_1"
 		assert payload["duration"] == 8.0
+
+	def test_video_shape(self) -> None:
+		view = VideoView(source="/tmp/render.mp4", label="Preview")
+		assert view_spec_to_dict(view) == {
+			"kind": "video",
+			"source": "/tmp/render.mp4",
+			"label": "Preview",
+		}
 
 
 class TestRegistryResolve:

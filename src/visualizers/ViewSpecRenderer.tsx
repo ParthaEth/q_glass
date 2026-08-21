@@ -1,4 +1,5 @@
 import type { ViewSpec } from "./types";
+import { apiBase } from "../adapters/http";
 import TracksTimelineView from "./TracksTimelineView";
 import TimelineView from "./TimelineView";
 
@@ -29,6 +30,10 @@ function renderLiteMarkdown(text: string): string {
 }
 
 type Props = { view: ViewSpec };
+
+function videoSource(source: string): string {
+	return source.startsWith("/") ? `${apiBase()}${source}` : source;
+}
 
 export default function ViewSpecRenderer({ view }: Props) {
 	if (view.kind === "table") {
@@ -89,6 +94,17 @@ export default function ViewSpecRenderer({ view }: Props) {
 				sandbox=""
 				srcDoc={view.html}
 			/>
+		);
+	}
+
+	if (view.kind === "video") {
+		return (
+			<figure className="qg-viz qg-viz--video">
+				<video controls preload="metadata" src={videoSource(view.source)}>
+					Your browser cannot play this video.
+				</video>
+				{view.label ? <figcaption>{view.label}</figcaption> : null}
+			</figure>
 		);
 	}
 
