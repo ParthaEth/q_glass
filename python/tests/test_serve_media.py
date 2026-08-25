@@ -27,6 +27,22 @@ class _DisconnectingHandler:
 		return
 
 
+class _HeaderRecordingHandler:
+	def __init__(self) -> None:
+		self.headers: dict[str, str] = {}
+		self.sent_headers: dict[str, str] = {}
+		self.wfile = _DisconnectingBuffer()
+
+	def send_response(self, _status: int) -> None:
+		return
+
+	def send_header(self, name: str, value: str) -> None:
+		self.sent_headers[name] = value
+
+	def end_headers(self) -> None:
+		return
+
+
 class TestMediaStore:
 	def test_local_video_source_becomes_opaque_media_url(self, tmp_path: Path) -> None:
 		mp4 = tmp_path / "preview.mp4"
@@ -65,3 +81,10 @@ class TestMediaStore:
 		mp4 = tmp_path / "preview.mp4"
 		mp4.write_bytes(b"video")
 		_send_media(_DisconnectingHandler(), mp4)
+
+	def test_local_media_disables_browser_caching(self, tmp_path: Path) -> None:
+		mp4 = tmp_path / "preview.mp4"
+		mp4.write_bytes(b"video")
+		handler = _HeaderRecordingHandler()
+		_send_media(handler, mp4, head_only=True)
+		assert handler.sent_headers["Cache-Control"] == "no-store"

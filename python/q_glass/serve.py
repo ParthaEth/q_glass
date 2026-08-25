@@ -248,6 +248,9 @@ def _send_media(
 	handler.send_header("Content-Type", content_type)
 	handler.send_header("Accept-Ranges", "bytes")
 	handler.send_header("Content-Length", str(length))
+	# A q-glass step can overwrite a versioned render path while the dashboard
+	# remains open. Never let the browser replay the older MP4 from cache.
+	handler.send_header("Cache-Control", "no-store")
 	if status == 206:
 		handler.send_header("Content-Range", f"bytes {start}-{end}/{size}")
 	handler.end_headers()
