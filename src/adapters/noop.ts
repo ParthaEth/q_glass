@@ -38,6 +38,10 @@ export class NoopAdapter implements RuntimeAdapter {
 		throw new AdapterNotWiredError("clearStart");
 	}
 
+	async resetStart(_runId: string): Promise<void> {
+		throw new AdapterNotWiredError("resetStart");
+	}
+
 	async setStartInput(_runId: string, _value: unknown): Promise<void> {
 		throw new AdapterNotWiredError("setStartInput");
 	}

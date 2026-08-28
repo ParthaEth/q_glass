@@ -13,6 +13,7 @@ export interface RuntimeAdapter {
 	clearStop?(runId: string): Promise<void>;
 	setStart?(runId: string, stageId: string): Promise<void>;
 	clearStart?(runId: string): Promise<void>;
+	resetStart?(runId: string): Promise<void>;
 	setStartInput?(runId: string, value: unknown): Promise<void>;
 	step(runId: string): Promise<void>;
 	start(input?: unknown): Promise<string>;

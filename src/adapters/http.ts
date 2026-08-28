@@ -62,6 +62,10 @@ export class HttpAdapter implements RuntimeAdapter {
 		await postJson("/api/session/clear_start", {});
 	}
 
+	async resetStart(_runId: string): Promise<void> {
+		await postJson("/api/session/reset_start", {});
+	}
+
 	async setStartInput(_runId: string, value: unknown): Promise<void> {
 		await postJson("/api/session/set_start_input", { input: value });
 	}

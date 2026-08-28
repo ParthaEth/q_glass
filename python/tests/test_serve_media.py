@@ -63,6 +63,25 @@ class TestMediaStore:
 		assert str(mp4) not in source
 		assert store.resolve(source.removeprefix("/api/media/")) == mp4
 
+	def test_local_image_source_becomes_opaque_media_url(self, tmp_path: Path) -> None:
+		png = tmp_path / "camera-seed.png"
+		png.write_bytes(b"image")
+		store = _MediaStore()
+		prepared = _prepare_media_views(
+			[
+				{
+					"id": "host.cameraSeed",
+					"title": "Camera seed",
+					"view": {"kind": "image", "source": str(png)},
+				}
+			],
+			store,
+		)
+		source = prepared[0]["view"]["source"]
+		assert source.startswith("/api/media/")
+		assert str(png) not in source
+		assert store.resolve(source.removeprefix("/api/media/")) == png
+
 	def test_missing_local_video_is_not_sent_to_the_browser(self, tmp_path: Path) -> None:
 		prepared = _prepare_media_views(
 			[{"view": {"kind": "video", "source": str(tmp_path / "missing.mp4")}}],

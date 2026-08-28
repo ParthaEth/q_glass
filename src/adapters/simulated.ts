@@ -101,6 +101,18 @@ export class SimulatedAdapter implements RuntimeAdapter {
 		};
 	}
 
+	async resetStart(_runId: string): Promise<void> {
+		this.run = this.freshRun({
+			preserveStop: this.run.stopAfter,
+			preserveStart: this.resolveStartId(),
+			preserveStartInput: this.run.startInput,
+		});
+		this.run = {
+			...this.run,
+			message: `Reset to start "${this.resolveStartId()}". Auto-run is ready.`,
+		};
+	}
+
 	async setStartInput(_runId: string, value: unknown): Promise<void> {
 		this.run = {
 			...this.run,

@@ -8,6 +8,7 @@ import {
 import type { NodeKind, NodeVisualType } from "../types/graph";
 
 export type StageNodeData = {
+	nodeId: string;
 	label: string;
 	kind: NodeKind;
 	visualType: NodeVisualType;
@@ -43,7 +44,10 @@ function StageNode({ data, selected }: NodeProps<Node<StageNodeData>>) {
 
 	if (visual === "diamond") {
 		return (
-			<div className={`qg-diamond-wrap ${stateClass}`.trim()}>
+			<div
+				className={`qg-diamond-wrap ${stateClass}`.trim()}
+				title={`Stable node id: ${data.nodeId}`}
+			>
 				<Handle type="target" position={Position.Top} className="qg-handle" />
 				<div className="qg-diamond">
 					<div className="qg-diamond__face" />
@@ -85,7 +89,10 @@ function StageNode({ data, selected }: NodeProps<Node<StageNodeData>>) {
 				: "qg-node--rounded";
 
 	return (
-		<div className={`qg-node ${shapeClass} ${stateClass}`.trim()}>
+		<div
+			className={`qg-node ${shapeClass} ${stateClass}`.trim()}
+			title={`Stable node id: ${data.nodeId}`}
+		>
 			{/* Default inbound (no handle id) — keeps linear edges simple */}
 			<Handle type="target" position={Position.Top} />
 			{/* Long No skips enter from the left margin (e.g. Has spans? → music) */}

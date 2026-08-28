@@ -153,6 +153,7 @@ function GraphCanvasInner({
 					position: n.position ?? { x: 0, y: 0 },
 					className: "nopan nodrag",
 					data: {
+						nodeId: n.id,
 						label: n.label,
 						kind: n.kind,
 						visualType: resolveVisualType(n),

@@ -97,6 +97,15 @@ class VideoView:
 	kind: Literal["video"] = "video"
 
 
+@dataclass(frozen=True)
+class ImageView:
+	"""Image viewer backed by an HTTPS URL or a host-local media path."""
+
+	source: str
+	label: str | None = None
+	kind: Literal["image"] = "image"
+
+
 ViewSpec = Union[
 	TableView,
 	TimelineView,
@@ -104,6 +113,7 @@ ViewSpec = Union[
 	MarkdownView,
 	HtmlView,
 	VideoView,
+	ImageView,
 ]
 
 

@@ -85,6 +85,22 @@ def test_constructor_accepts_configured_start_input() -> None:
 	assert session.step()["nodeAttempts"]["b"][-1]["input"] == input_payload
 
 
+def test_reset_to_start_clears_attempts_but_retains_input() -> None:
+	graph = _linear_graph()
+	session = RuntimeSession(
+		graph,
+		start_node_id="b",
+		start_input={"brief": {"prompt_text": "configured"}},
+	)
+	session.step()
+
+	session.reset_to_start()
+	state = session.get_state()
+	assert state["currentNodeId"] == "b"
+	assert state["nodeAttempts"] == {}
+	assert state["startInput"] == {"brief": {"prompt_text": "configured"}}
+
+
 def test_step_without_progress_ignores_stale_entry_cursor() -> None:
 	"""Even if current still points at entry, idle Step honors start_node_id."""
 	graph = _linear_graph()

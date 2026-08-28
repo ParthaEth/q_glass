@@ -8,6 +8,7 @@ from q_glass.runtime import RunResult, Session, run_from, run_node
 from q_glass.serve import serve
 from q_glass.visualizers import (
 	HtmlView,
+	ImageView,
 	MarkdownView,
 	TableView,
 	TimelineAnchor,
@@ -24,6 +25,7 @@ __all__ = [
 	"Graph",
 	"GraphBuilder",
 	"HtmlView",
+	"ImageView",
 	"MarkdownView",
 	"RunResult",
 	"Session",

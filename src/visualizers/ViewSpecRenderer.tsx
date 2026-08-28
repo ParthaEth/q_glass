@@ -102,5 +102,14 @@ export default function ViewSpecRenderer({ view }: Props) {
 		);
 	}
 
+	if (view.kind === "image") {
+		return (
+			<figure className="qg-viz qg-viz--image">
+				<img src={videoSource(view.source)} alt={view.label ?? "Visualizer image"} />
+				{view.label ? <figcaption>{view.label}</figcaption> : null}
+			</figure>
+		);
+	}
+
 	return <p className="qg-muted">Unknown view kind</p>;
 }

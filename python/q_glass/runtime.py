@@ -263,6 +263,14 @@ class RuntimeSession:
 			self._cursor_payload = None
 		self.session.message = f'Start cleared → entry "{entry}".'
 
+	def reset_to_start(self) -> None:
+		"""Reset execution to the configured start while retaining its editable input."""
+		start = self.session.start_node_id or self.graph.entry_node_id()
+		self.session.current_node_id = start
+		self.session.node_attempts = {}
+		self._cursor_payload = None
+		self.session.message = f'Reset to start "{start}". Auto-run is ready.'
+
 	def set_stop(self, node_id: str) -> None:
 		if node_id not in self.graph.nodes:
 			self.session.message = f'Unknown stop stage "{node_id}"'
@@ -286,6 +294,7 @@ class RuntimeSession:
 		self.session.message = f'Start input updated for "{sid}". Click Start to run.'
 
 	def start(self, start_input: dict[str, Any] | None = None) -> dict[str, Any]:
+		self.reset_to_start()
 		start_id = self.session.start_node_id or self.graph.entry_node_id()
 		inp = (
 			deepcopy(start_input)

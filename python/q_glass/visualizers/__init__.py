@@ -10,6 +10,7 @@ from q_glass.visualizers.registry import (
 )
 from q_glass.visualizers.specs import (
 	HtmlView,
+	ImageView,
 	MarkdownView,
 	TableView,
 	TimelineAnchor,
@@ -24,6 +25,7 @@ from q_glass.visualizers.specs import (
 
 __all__ = [
 	"HtmlView",
+	"ImageView",
 	"MarkdownView",
 	"TableView",
 	"TimelineAnchor",

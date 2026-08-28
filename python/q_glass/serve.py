@@ -184,12 +184,12 @@ def _prepare_media_views(
 	visualizers: list[dict[str, Any]],
 	media_store: _MediaStore,
 ) -> list[dict[str, Any]]:
-	"""Replace local ``VideoView`` sources with q-glass media endpoint URLs."""
+	"""Replace local video/image view sources with q-glass media endpoint URLs."""
 	prepared: list[dict[str, Any]] = []
 	for item in visualizers:
 		entry = dict(item)
 		view_raw = entry.get("view")
-		if not isinstance(view_raw, dict) or view_raw.get("kind") != "video":
+		if not isinstance(view_raw, dict) or view_raw.get("kind") not in {"video", "image"}:
 			prepared.append(entry)
 			continue
 		view = dict(view_raw)
@@ -383,6 +383,10 @@ def serve(
 					return
 				if path in ("/api/session/clear_start", "/session/clear_start"):
 					runtime.clear_start()
+					_send_json(self, 200, runtime.get_state())
+					return
+				if path in ("/api/session/reset_start", "/session/reset_start"):
+					runtime.reset_to_start()
 					_send_json(self, 200, runtime.get_state())
 					return
 				if path in ("/api/session/set_stop", "/session/set_stop"):
