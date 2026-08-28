@@ -184,14 +184,28 @@ def run_from(
 class RuntimeSession:
 	"""Mutable session used by the HTTP dashboard."""
 
-	def __init__(self, graph: Graph) -> None:
+	def __init__(
+		self,
+		graph: Graph,
+		*,
+		start_node_id: str | None = None,
+		start_input: dict[str, Any] | None = None,
+	) -> None:
+		"""Create a dashboard session, optionally positioned at a configured node."""
 		self.graph = graph
 		self._lock = threading.Lock()
+		start = start_node_id or graph.entry_node_id()
+		if start not in graph.nodes:
+			raise ValueError(f'Unknown start stage "{start}"')
 		self.session = Session(
-			start_node_id=graph.entry_node_id(),
-			start_input=_default_sample(graph, graph.entry_node_id()),
-			current_node_id=graph.entry_node_id(),
-			message=f'Ready at start "{graph.entry_node_id()}". Edit input, then Start.',
+			start_node_id=start,
+			start_input=(
+				deepcopy(start_input)
+				if start_input is not None
+				else _default_sample(graph, start)
+			),
+			current_node_id=start,
+			message=f'Ready at start "{start}". Edit input, then Start.',
 		)
 		self._cursor_payload: dict[str, Any] | None = None
 

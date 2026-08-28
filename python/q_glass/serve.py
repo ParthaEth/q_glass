@@ -275,6 +275,8 @@ def serve(
 	*,
 	host: str = "127.0.0.1",
 	port: int = 8787,
+	start_node_id: str | None = None,
+	start_input: dict[str, Any] | None = None,
 	blocking: bool = True,
 	headless: bool = False,
 	ui_host: str = "127.0.0.1",
@@ -287,7 +289,11 @@ def serve(
 	dev server so the dashboard can talk to this API. Vite's console is silenced;
 	use the printed ``?adapter=http`` URL (not the bare :5173 link).
 	"""
-	runtime = RuntimeSession(graph)
+	runtime = RuntimeSession(
+		graph,
+		start_node_id=start_node_id,
+		start_input=start_input,
+	)
 	media_store = _MediaStore()
 	ui_proc: subprocess.Popen[Any] | None = None
 	url = dashboard_url(
