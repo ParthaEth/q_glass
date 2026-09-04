@@ -8,6 +8,7 @@
     "dev": "vite --host 127.0.0.1 --port 5173",
     "dev:open": "vite --host 127.0.0.1 --port 5173 --open",
     "build": "tsc --noEmit && vite build",
+    "build:telemetry-embed": "tsc --noEmit && vite build --base /q-glass/ --outDir ../../../frontend/public/q-glass --emptyOutDir",
     "preview": "vite preview --host 127.0.0.1 --port 5173"
   },
   "dependencies": {

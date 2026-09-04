@@ -42,6 +42,7 @@ export default function Toolbar({
 			</div>
 			<div className="qg-toolbar__actions">
 				<span className="qg-chip">adapter: {adapterName}</span>
+				{!supportsControl ? <span className="qg-chip">read only</span> : null}
 				{busy ? <span className="qg-chip qg-chip--busy">running…</span> : null}
 				{startNodeId ? (
 					<span className="qg-chip qg-chip--start" title="Run starts here">
@@ -53,7 +54,7 @@ export default function Toolbar({
 						stop: {stopAfter}
 					</span>
 				) : null}
-				<button
+				{supportsControl ? <><button
 					type="button"
 					disabled={disabled}
 					title="Reset to start, then auto-step until stop, failure, or the end"
@@ -88,6 +89,7 @@ export default function Toolbar({
 				<button type="button" disabled={disabled} onClick={onStep}>
 					Step next
 				</button>
+				</> : null}
 			</div>
 			{hint ? <p className="qg-toolbar__hint">{hint}</p> : null}
 		</header>

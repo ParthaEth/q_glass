@@ -69,6 +69,11 @@ export interface NodeAttempt {
 	input?: unknown;
 	output?: unknown;
 	error?: string;
+	startedAt?: string;
+	endedAt?: string;
+	eventIds?: string[];
+	kpis?: Array<Record<string, unknown>>;
+	steps?: Array<Record<string, unknown>>;
 }
 
 export interface RunState {

@@ -41,6 +41,7 @@ type Props = {
 	stopAfterNodeId: string | null;
 	completedNodeIds: Set<string>;
 	failedNodeIds: Set<string>;
+	skippedNodeIds: Set<string>;
 	onSelectNode: (nodeId: string | null) => void;
 };
 
@@ -134,6 +135,7 @@ function GraphCanvasInner({
 	stopAfterNodeId,
 	completedNodeIds,
 	failedNodeIds,
+	skippedNodeIds,
 	onSelectNode,
 }: Props) {
 	const measured = useStore(selectMeasuredSizes, (a, b) => measuredKey(a) === measuredKey(b));
@@ -145,6 +147,7 @@ function GraphCanvasInner({
 				let runStatus: StageNodeData["runStatus"] = "pending";
 				if (n.id === busyNodeId) runStatus = "running";
 				else if (failedNodeIds.has(n.id)) runStatus = "failed";
+				else if (skippedNodeIds.has(n.id)) runStatus = "skipped";
 				else if (completedNodeIds.has(n.id)) runStatus = "completed";
 				else if (n.id === currentNodeId) runStatus = "next";
 				return {
@@ -175,6 +178,7 @@ function GraphCanvasInner({
 			stopAfterNodeId,
 			completedNodeIds,
 			failedNodeIds,
+			skippedNodeIds,
 		],
 	);
 

@@ -8,6 +8,8 @@ export interface RuntimeAdapter {
 
 	loadGraph(): Promise<GraphDefinition>;
 	getRunState(runId: string): Promise<RunState | null>;
+	/** Optional push updates, used by live/read-only trace adapters. */
+	subscribe?(listener: () => void): () => void;
 
 	setStopAfter(runId: string, stageId: string): Promise<void>;
 	clearStop?(runId: string): Promise<void>;

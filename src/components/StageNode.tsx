@@ -13,7 +13,7 @@ export type StageNodeData = {
 	kind: NodeKind;
 	visualType: NodeVisualType;
 	stageId?: string;
-	runStatus?: "pending" | "next" | "running" | "completed" | "failed";
+	runStatus?: "pending" | "next" | "running" | "completed" | "failed" | "skipped";
 	isStop?: boolean;
 	isStart?: boolean;
 };
@@ -36,6 +36,7 @@ function StageNode({ data, selected }: NodeProps<Node<StageNodeData>>) {
 		data.runStatus === "next" ? "qg-node--next" : "",
 		data.runStatus === "completed" ? "qg-node--completed" : "",
 		data.runStatus === "failed" ? "qg-node--failed" : "",
+		data.runStatus === "skipped" ? "qg-node--skipped" : "",
 		data.isStart ? "qg-node--start" : "",
 		data.isStop ? "qg-node--stop" : "",
 	]

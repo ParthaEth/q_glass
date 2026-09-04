@@ -25,6 +25,10 @@ export default function NodeInspector({
 	);
 	const [draft, setDraft] = useState("");
 	const [parseError, setParseError] = useState<string | null>(null);
+	const attempts = selectedNodeId
+		? (run?.nodeAttempts[selectedNodeId] ?? [])
+		: [];
+	const [attemptIndex, setAttemptIndex] = useState(0);
 
 	useEffect(() => {
 		if (!node || !isStartNode) return;
@@ -32,6 +36,10 @@ export default function NodeInspector({
 		setDraft(JSON.stringify(source, null, 2));
 		setParseError(null);
 	}, [node, isStartNode, run?.startNodeId, run?.startInput]);
+
+	useEffect(() => {
+		setAttemptIndex(Math.max(0, attempts.length - 1));
+	}, [node?.id, attempts.length]);
 
 	if (!node) {
 		return (
@@ -44,10 +52,7 @@ export default function NodeInspector({
 		);
 	}
 
-	const attempts = selectedNodeId
-		? (run?.nodeAttempts[selectedNodeId] ?? [])
-		: [];
-	const last = attempts[attempts.length - 1];
+	const last = attempts[attemptIndex];
 	const visual = resolveVisualType(node);
 	const stageKey = node.stageId ?? node.id;
 
@@ -67,6 +72,21 @@ export default function NodeInspector({
 	return (
 		<aside className="qg-inspector">
 			<h2>{node.label}</h2>
+			{attempts.length > 1 ? (
+				<label className="qg-attempt-select">
+					<span>Attempt</span>
+					<select
+						value={attemptIndex}
+						onChange={(event) => setAttemptIndex(Number(event.target.value))}
+					>
+						{attempts.map((attempt, index) => (
+							<option key={`${attempt.attempt}-${index}`} value={index}>
+								{attempt.attempt} · {attempt.status}
+							</option>
+						))}
+					</select>
+				</label>
+			) : null}
 			<dl className="qg-meta">
 				<div>
 					<dt>id</dt>
@@ -162,6 +182,22 @@ export default function NodeInspector({
 					visualize={visualize}
 				/>
 			</section>
+			{last && ((last.steps?.length ?? 0) > 0 || (last.kpis?.length ?? 0) > 0) ? (
+				<section>
+					<IoPane
+						jsonTitle="Steps and KPIs"
+						value={{
+							startedAt: last.startedAt,
+							endedAt: last.endedAt,
+							steps: last.steps ?? [],
+							kpis: last.kpis ?? [],
+						}}
+						stageId={stageKey}
+						nodeId={node.id}
+						side="out"
+					/>
+				</section>
+			) : null}
 			{last?.error ? (
 				<section>
 					<p className="qg-error">Last error: {last.error}</p>

@@ -1,6 +1,11 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import { HttpAdapter, shouldUseHttpAdapter } from "./adapters/http";
+import {
+	OtelTraceAdapter,
+	otelTraceId,
+	shouldUseOtelTraceAdapter,
+} from "./adapters/otelTrace";
 import { SimulatedAdapter } from "./adapters/simulated";
 import type { RuntimeAdapter } from "./adapters/types";
 import {
@@ -14,6 +19,7 @@ import Toolbar from "./components/Toolbar";
 import type { GraphDefinition, RunState } from "./types/graph";
 
 function createAdapter(): RuntimeAdapter {
+	if (shouldUseOtelTraceAdapter()) return new OtelTraceAdapter(otelTraceId());
 	return shouldUseHttpAdapter() ? new HttpAdapter() : new SimulatedAdapter();
 }
 
@@ -96,6 +102,8 @@ export default function App() {
 		})();
 	}, [refreshRun]);
 
+	useEffect(() => adapter.subscribe?.(() => void refreshRun()), [refreshRun]);
+
 	const deferredSelectedId = useDeferredValue(selectedNodeId);
 	const inspectorNodeId = selectedNodeId === null ? null : deferredSelectedId;
 	const selectedNode = useMemo(() => {
@@ -120,6 +128,15 @@ export default function App() {
 					const last = attempts[attempts.length - 1];
 					return last?.status === "failed";
 				})
+				.map(([id]) => id),
+		);
+	}, [run]);
+
+	const skippedIds = useMemo(() => {
+		if (!run) return new Set<string>();
+		return new Set(
+			Object.entries(run.nodeAttempts)
+				.filter(([, attempts]) => attempts[attempts.length - 1]?.status === "skipped")
 				.map(([id]) => id),
 		);
 	}, [run]);
@@ -313,11 +330,12 @@ export default function App() {
 					graph={graph}
 					selectedNodeId={selectedNodeId}
 					currentNodeId={run?.currentNodeId ?? null}
-					busyNodeId={busyNodeId}
+					busyNodeId={busyNodeId ?? (adapter.name === "otel-trace" ? run?.currentNodeId ?? null : null)}
 					startNodeId={run?.startNodeId ?? null}
 					stopAfterNodeId={run?.stopAfter ?? null}
 					completedNodeIds={completedIds}
 					failedNodeIds={failedIds}
+					skippedNodeIds={skippedIds}
 					onSelectNode={setSelectedNodeId}
 				/>
 				<NodeInspector
